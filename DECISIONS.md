@@ -20,4 +20,4 @@ Design choices that are not obvious from the code, with the alternative that was
 
 **8. The reported factor shows the cost of ignoring publication dates.** One planted factor is also released as quarterly reports with a 1 to 3 month lag. Dating those reports by period end instead of publication date raises the measured IC, and a test asserts the direction and a minimum size of that gap.
 
-**Not in this milestone.** The WRDS loader. Its table and column names can only be checked against a live account, so it has no test yet that would mean anything.
+**9. The WRDS loader moved from milestone 1 to milestone 6.** Its table and column names can only be checked against a live account, so a loader written earlier would have no test that means anything. Milestones 2 to 5 run on the synthetic panel and do not need it.

@@ -113,12 +113,12 @@ A small set from the published literature. Each definition will cite its paper.
 
 ## Milestones
 
-1. **Scaffold, data layer, synthetic panel.** Panel interface, generator with planted and noise factors, point-in-time lagging, WRDS loader behind an optional dependency.
+1. **Scaffold, data layer, synthetic panel.** Panel interface, generator with planted and noise factors, point-in-time lagging. Done.
 2. **Factor evaluation.** IC, decay, quantiles, turnover, Newey–West, multiple-testing adjustment, cross-check against `alphalens-reloaded`.
 3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter.
 5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution.
-6. **Real-data run, holdout, README.**
+6. **WRDS loader, real-data run, holdout, README.** The loader is written here, where a live account can check its table and column names.
 
 Each milestone is one branch and one PR.
 
