@@ -1,10 +1,8 @@
 """CRSP and Compustat through WRDS: queries, and the steps from raw tables to a panel.
 
-Status. The table and column names below follow the WRDS documentation for the CRSP
-"CIZ" format (the only one published since 2025) and for Compustat annual fundamentals.
-They have not been run against a live account from this repository. Run
-``scripts/wrds_download.py --smoke`` first: it executes each query on a short window and
-prints what comes back. Everything after the download works on plain data frames and is tested
+Status. The three queries were run against a live WRDS account on 2026-11-16 and
+returned the expected columns. ``scripts/wrds_download.py --smoke`` repeats that check on
+a short window. Everything after the download works on plain data frames and is tested
 with small hand-made tables.
 
 Nothing from WRDS is stored in the repository. ``save_raw`` writes to a local folder
