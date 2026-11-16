@@ -105,11 +105,11 @@ A small set from the published literature. Each definition will cite its paper.
 - [x] A test shows that replacing every input after a date changes no fitted weight and no score on or before that date, for every combination method.
 - [x] The backtest engine passes all eight `backtest-bias-suite` traps in CI.
 - [x] The deflated Sharpe ratio uses the trial count read from the ledger, and a test fails if a configuration is evaluated without being logged.
-- [ ] The full pipeline runs on the synthetic panel from a clean clone with one command, without WRDS access.
+- [x] The full pipeline runs on the synthetic panel from a clean clone with one command, without WRDS access.
 - [ ] Every real-data number in the README is produced by one documented command for a reader with WRDS access, and is labelled as such.
 - [ ] The holdout period is evaluated once, and the README reports it.
-- [ ] `uv run pytest` and ruff pass in CI.
-- [ ] README: one-sentence problem, quick-start demo, results with numbers, design trade-offs, Limitations.
+- [x] `uv run pytest` and ruff pass in CI.
+- [x] README: one-sentence problem, quick-start demo, results with numbers, design trade-offs, Limitations.
 
 ## Milestones
 
@@ -118,7 +118,7 @@ A small set from the published literature. Each definition will cite its paper.
 3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger. Done.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter. Done.
 5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution. Done. The regression is in place; loading the Fama–French factors moves to milestone 6 with the other real data.
-6. **WRDS loader, real-data run, holdout, README.** The loader is written here, where a live account can check its table and column names.
+6. **WRDS loader, real-data run, holdout, README.** Done: structural risk model, loaders and factor definitions (tested on hand-made tables), README with synthetic results. Open: the smoke run against a live account, the real-data run and the holdout.
 
 Each milestone is one branch and one PR.
 

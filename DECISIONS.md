@@ -80,7 +80,7 @@ The IC series of a noise factor has no autocorrelation by construction, so the l
 
 ### What the methods recover on the synthetic panel
 
-Mean composite IC over five seeds (500 assets, 240 months, 2 planted and 10 noise factors, first 60 months excluded). The best possible score has an IC of 0.054, and the plain average of all twelve factors 0.020.
+`uv run python scripts/combination_recovery.py`. Mean composite IC over five seeds (500 assets, 240 months, 2 planted and 10 noise factors, first 60 months excluded). The best possible score has an IC of 0.054, and the plain average of all twelve factors 0.020.
 
 | Method | Composite IC |
 | --- | --- |
@@ -175,7 +175,7 @@ This replaces decision 35 as the default. The old model is kept as `risk_model="
 
 ### How well the model predicts risk
 
-Bias statistic: the standard deviation across months of realized return over predicted volatility, for a fixed kind of portfolio. A calibrated model gives 1. Above 1 means risk was understated. Panels of 300 assets and 180 months with beta dispersion 0.4 and 8 industries, three seeds.
+`uv run python scripts/risk_bias.py`. Bias statistic: the standard deviation across months of realized return over predicted volatility, for a fixed kind of portfolio. A calibrated model gives 1. Above 1 means risk was understated. Panels of 300 assets and 180 months with beta dispersion 0.4 and 8 industries, three seeds.
 
 | Portfolio | Structural | Styles only |
 | --- | --- | --- |
