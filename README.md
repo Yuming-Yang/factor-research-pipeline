@@ -118,7 +118,9 @@ A risk model built from the alpha factors alone understates the risk of beta and
 
 ## Real data
 
-The pipeline has loaders for CRSP and Compustat through WRDS and for the Ken French factor library, and definitions for eleven published factors. **They have not been run on real data.** The queries follow the WRDS documentation for the current CRSP format; everything after the download is tested on hand-made tables of the same shape. No WRDS data is stored in this repository.
+The pipeline has loaders for CRSP and Compustat through WRDS and for the Ken French factor library, and definitions for eleven published factors. The WRDS queries were run against a live account on 2026-11-16 and the panel builds from them in under a minute. **No real-data result is reported here yet**, and the Ken French loader has not been run. No WRDS data is stored in this repository.
+
+The last five years of data, January 2021 to December 2025, are a holdout. Research code loads data with an end date of December 2020, so later months never reach a data frame. The holdout will be evaluated once, after every design choice is fixed.
 
 With a WRDS account:
 

@@ -212,3 +212,13 @@ None of this has been run against WRDS or the Ken French site. The queries follo
 **64. Industries are the ten SIC divisions,** from the last SIC code on file for each security.
 
 **65. The Ken French reader takes the fetch function as an argument.** Tests pass in zip files written in the library's layout, so no test touches the network. The parser reads the monthly section, stops at the annual one, strips padded column names and turns the missing-value codes into missing values.
+
+## Milestone 6, part 3: first contact with real data
+
+**66. The queries ran as written.** On 2026-11-16 the smoke run and the full download returned the expected columns for all three tables, with no change to the SQL or the CIZ flag values. The download covers January 1960 to December 2025. The Ken French loader has still not been run.
+
+**67. The holdout is January 2021 to December 2025, fixed before any real-data result was looked at.** It is the last five years of the download. `load_raw(folder, end="2020-12-31")` drops later CRSP months and Compustat fiscal years when the files are read, and the check script uses that end date by default. A test builds one panel from truncated tables and one from full tables and checks that they agree month for month up to the cutoff. The only thing known about the holdout so far is that its dates exist in the file.
+
+**68. The research sample starts in July 1963.** Earlier months are used to compute momentum, volatility and beta and are then dropped, so the first month of the panel already has its history.
+
+**69. No real-data number goes into this repository until the data terms are confirmed** (SPEC decision D6). The in-sample factor screen has been run and looked at; its numbers are not recorded here.

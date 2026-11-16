@@ -1,10 +1,8 @@
 """CRSP and Compustat through WRDS: queries, and the steps from raw tables to a panel.
 
-Status. The table and column names below follow the WRDS documentation for the CRSP
-"CIZ" format (the only one published since 2025) and for Compustat annual fundamentals.
-They have not been run against a live account from this repository. Run
-``scripts/wrds_download.py --smoke`` first: it executes each query on a short window and
-prints what comes back. Everything after the download works on plain data frames and is tested
+Status. The three queries were run against a live WRDS account on 2026-11-16 and
+returned the expected columns. ``scripts/wrds_download.py --smoke`` repeats that check on
+a short window. Everything after the download works on plain data frames and is tested
 with small hand-made tables.
 
 Nothing from WRDS is stored in the repository. ``save_raw`` writes to a local folder
@@ -59,6 +57,11 @@ CCM_LINK_SQL = """
 CRSP_COLUMNS = ("permno", "mthcaldt", "mthret", "mthcap", "primaryexch", "siccd")
 LINK_COLUMNS = ("gvkey", "permno", "linkdt", "linkenddt")
 
+#: First month of the research sample. Compustat coverage is thin before this.
+SAMPLE_START = "1963-07-31"
+#: Last month research code may read. The five years after it are the holdout.
+HOLDOUT_STARTS_AFTER = "2020-12-31"
+
 #: Months between a fiscal year end and the date its accounts are treated as public.
 REPORTING_LAG_MONTHS = 6
 #: Annual accounts are dropped once the fiscal year end is this many months old.
@@ -94,13 +97,34 @@ def save_raw(raw: RawData, folder: str | Path) -> None:
         getattr(raw, name).to_csv(target / f"{name}.csv", index=False)
 
 
-def load_raw(folder: str | Path) -> RawData:
+def load_raw(folder: str | Path, end: str | pd.Timestamp | None = None) -> RawData:
+    """Read the saved tables. With ``end``, everything dated after it is dropped on read.
+
+    This is how the holdout is kept out of reach: research code loads with ``end`` set to
+    the last month before the holdout, so no later return or account ever reaches a
+    data frame. A fiscal year that ends on or before ``end`` but is published after it is
+    kept; the point-in-time step dates it, and the panel has no months after ``end`` in
+    which it could be used.
+    """
     source = Path(folder)
     tables = [
         pd.read_csv(source / f"{name}.csv", parse_dates=dates, dtype={"gvkey": str})
         for name, dates in _DATE_COLUMNS.items()
     ]
-    return RawData(*tables)
+    raw = RawData(*tables)
+    return raw if end is None else truncate(raw, end)
+
+
+def truncate(raw: RawData, end: str | pd.Timestamp) -> RawData:
+    """Drop CRSP months and Compustat fiscal years dated after ``end``."""
+    cutoff = pd.Timestamp(end)
+    return RawData(
+        crsp=raw.crsp[pd.to_datetime(raw.crsp["mthcaldt"]) <= cutoff].reset_index(drop=True),
+        compustat=raw.compustat[pd.to_datetime(raw.compustat["datadate"]) <= cutoff].reset_index(
+            drop=True
+        ),
+        links=raw.links,
+    )
 
 
 # --- CRSP: returns, market value, industry, universe -------------------------------------
@@ -347,8 +371,13 @@ FACTORS = (
 )
 
 
-def build_panel(raw: RawData, size_percentile: float | None = 0.2) -> Panel:
+def build_panel(
+    raw: RawData, size_percentile: float | None = 0.2, start: str | None = None
+) -> Panel:
     """From raw WRDS tables to a panel with the eleven factors.
+
+    ``start`` drops earlier months after the factors are computed, so the first months of
+    the panel already have a year of return history behind them.
 
     Every factor is signed so that a higher value goes with a higher expected return in
     the paper it comes from: size, reversal, asset growth, accruals, share issuance,
@@ -388,4 +417,13 @@ def build_panel(raw: RawData, size_percentile: float | None = 0.2) -> Panel:
     universe = None
     if size_percentile is not None:
         universe = size_universe(cap, crsp.exchange, size_percentile)
+    if start is not None:
+        keep = returns.index >= pd.Timestamp(start)
+        returns = returns.loc[keep]
+        returns = returns.loc[:, returns.notna().any()]
+        characteristics = {
+            name: frame.loc[keep, returns.columns] for name, frame in characteristics.items()
+        }
+        if universe is not None:
+            universe = universe.loc[keep, returns.columns]
     return Panel(returns, characteristics, crsp.industry, universe)

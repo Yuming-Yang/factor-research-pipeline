@@ -11,17 +11,31 @@ from __future__ import annotations
 import argparse
 
 from factorpipe.evaluation import screen_factors
-from factorpipe.wrds_data import FACTORS, build_panel, crsp_panel, load_raw
+from factorpipe.wrds_data import (
+    FACTORS,
+    HOLDOUT_STARTS_AFTER,
+    SAMPLE_START,
+    build_panel,
+    crsp_panel,
+    load_raw,
+)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--data", default="data/wrds")
+    parser.add_argument(
+        "--end",
+        default=HOLDOUT_STARTS_AFTER,
+        help="last month to read; the default stops before the holdout",
+    )
+    parser.add_argument("--start", default=SAMPLE_START, help="first month of the panel")
     args = parser.parse_args()
 
-    raw = load_raw(args.data)
+    raw = load_raw(args.data, end=args.end)
+    print(f"reading through {args.end}; later data is not loaded")
     print(f"months dropped outside the longest spell: {crsp_panel(raw.crsp).months_dropped:,}")
-    panel = build_panel(raw)
+    panel = build_panel(raw, start=args.start)
     months, securities = panel.returns.shape
     print(f"panel: {months} months x {securities:,} securities")
     print(f"in the size universe on the last date: {int(panel.universe.iloc[-1].sum()):,}")
