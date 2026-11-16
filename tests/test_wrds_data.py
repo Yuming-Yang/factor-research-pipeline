@@ -370,3 +370,50 @@ def test_download_runs_three_queries_with_the_date_range(tmp_path):
         original.characteristics["book_to_market"],
         check_freq=False,
     )
+
+
+# --- holdout -----------------------------------------------------------------------------
+
+
+def test_loading_with_an_end_date_never_reads_later_data(tmp_path):
+    from factorpipe.wrds_data import truncate
+
+    raw = made_up_market(n_assets=20, n_months=72)
+    save_raw(raw, tmp_path)
+    cutoff = "2015-12-31"
+    early = load_raw(tmp_path, end=cutoff)
+    assert early.crsp["mthcaldt"].max() == pd.Timestamp(cutoff)
+    assert early.compustat["datadate"].max() <= pd.Timestamp(cutoff)
+    assert len(early.crsp) < len(raw.crsp) and len(early.compustat) < len(raw.compustat)
+    pd.testing.assert_frame_equal(early.crsp, truncate(raw, cutoff).crsp)
+
+    # The panel built without the later data is the same, month for month, as the early
+    # part of the panel built with it: nothing before the cutoff depends on what follows.
+    short, full = build_panel(early), build_panel(load_raw(tmp_path))
+    assert short.returns.index.max() == pd.Timestamp(cutoff)
+    upto = full.returns.index <= pd.Timestamp(cutoff)
+    pd.testing.assert_frame_equal(short.returns, full.returns.loc[upto], check_freq=False)
+    for name in FACTORS:
+        pd.testing.assert_frame_equal(
+            short.characteristics[name],
+            full.characteristics[name].loc[upto],
+            check_freq=False,
+            obj=name,
+        )
+    pd.testing.assert_frame_equal(short.universe, full.universe.loc[upto], check_freq=False)
+
+
+def test_a_start_date_trims_the_panel_after_factors_are_computed():
+    raw = made_up_market(n_assets=20, n_months=72)
+    full = build_panel(raw)
+    trimmed = build_panel(raw, start="2014-01-31")
+    assert trimmed.returns.index.min() == pd.Timestamp("2014-01-31")
+    # Momentum is already available in the first month, because it was computed on the
+    # earlier history before trimming.
+    assert trimmed.characteristics["momentum"].iloc[0].notna().mean() > 0.9
+    pd.testing.assert_frame_equal(
+        trimmed.characteristics["momentum"],
+        full.characteristics["momentum"].loc["2014-01-31":],
+        check_freq=False,
+    )
+    Panel(trimmed.returns, trimmed.characteristics, trimmed.industry, trimmed.universe)
