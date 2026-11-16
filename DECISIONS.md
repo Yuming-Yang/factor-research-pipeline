@@ -55,3 +55,40 @@ Reproduce with `uv run python scripts/false_positive_rates.py` (about 40 seconds
 The IC series of a noise factor has no autocorrelation by construction, so the lags only add estimation noise, and a Newey-West standard error is known to be too small on average in short samples. Holm depends on very small p-values, where that matters most.
 
 **17. The normal reference is kept and the measured rates are reported.** The criterion was reworded to require the measurement, not a pass. Rejected for now: a Student-t or fixed-b reference distribution, and a data-driven lag count. Either would move the Holm rate toward 5%, at the cost of one more design choice to defend; the size of the gap is small next to what the adjustment removes (25 unadjusted tests at 5.6% each flag at least one noise factor in roughly three panels out of four). Anyone reading a Holm-adjusted result from this pipeline should treat its 5% as closer to 9%.
+
+## Milestone 3: factor combination
+
+**18. "Known at t" is defined once per kind of history.** An IC with horizon `h` formed at `s` is usable at `t` only if `s + h + embargo <= t`; a one-month factor return if `s + 1 + embargo <= t`; a regression row with an `h`-month label if `s + h + embargo <= t`. Each method reads its history through one of these three rules. There is no separate splitter object: with monthly refits, a splitter would hand out one test date at a time, and the rule is easier to check where the shift is applied.
+
+**19. The embargo sits before the evaluation date.** In cross-validation the embargo protects training data that comes after a test fold. In a walk-forward design nothing is trained on data after the evaluation date, so that gap has nothing to protect. Here the embargo is an extra delay, on top of the purge, before history may be used. The default is zero.
+
+**20. The lookahead test replaces later data instead of shifting it.** For each method and two horizon and embargo settings, every return and characteristic after a cutoff is replaced with noise; weights and scores up to the cutoff must be identical, and scores after it must differ. A second test applies the same check to a deliberately leaky weighting and confirms that it is caught. The pattern of missing values is kept, because whether an asset still exists at the end of month `t` is known at `t`.
+
+**21. `investable` is not lookahead.** It reads the next row of the returns grid, but what it encodes is whether the asset delisted during month `t`, which is known at the end of `t`. The last row of a panel is never investable, so a live run needs one more row than the last date it trades on.
+
+**22. Factor returns are regression slopes, not quantile spreads.** The one-month return of a factor is the cross-sectional mean of `z * (r - mean r)`. It uses every asset, is linear in the factor, and needs no choice of quantile count. Quantile spreads stay in the evaluation module, where they are what a reader expects to see.
+
+**23. Ridge is fitted from per-date sufficient statistics.** Each formation date stores `X'X`, `X'y` and `y'y`; a fit over any set of dates is a sum. The penalty is `alpha` times the number of training rows and is chosen on the latest quarter of the training dates, which are purged from the dates used to fit. With factors that are close to uncorrelated, as in the synthetic panel, ridge shrinks all coefficients by about the same factor and the ranking of assets barely changes; the penalty matters when factors are correlated.
+
+**24. The tree model is small and its hyperparameters are fixed.** Sixty trees of depth three, refitted once a year on a ten-year window. No search: each searched setting would have to be either nested inside the training window or counted as a trial, and with an IC of a few percent a larger model mostly fits noise.
+
+**25. Linear weights are normalized to unit absolute sum and may be negative.** A factor whose sign is wrong for the sample gets a negative weight, which a test checks by flipping a planted factor. Equal weighting is the exception: it assumes the sign of every factor is known in advance.
+
+**26. A trial is a method, its parameters, the factor list, the horizon, the embargo and a fingerprint of the data.** Running the same trial twice adds nothing to the count; changing any of these adds one. Values tried inside a training window, such as the ridge penalty, are not trials, because the choice never sees the evaluation data.
+
+**27. `robust-mvo` and scikit-learn are runtime dependencies.** `robust-mvo` is pinned to a commit and supplies the Ledoit-Wolf covariance for the factor-level mean-variance weights.
+
+### What the methods recover on the synthetic panel
+
+Mean composite IC over five seeds (500 assets, 240 months, 2 planted and 10 noise factors, first 60 months excluded). The best possible score has an IC of 0.054, and the plain average of all twelve factors 0.020.
+
+| Method | Composite IC |
+| --- | --- |
+| Equal weight | 0.020 |
+| Factor momentum | 0.042 |
+| Trees | 0.047 |
+| ICIR weight | 0.048 |
+| Factor MVO | 0.051 |
+| Ridge | 0.053 |
+
+The order is specific to this panel: the true model is linear, the factors are independent and the signal is stable. It says the methods work as built. It does not say which one to prefer on real data.
