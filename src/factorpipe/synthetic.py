@@ -96,6 +96,24 @@ class Truth:
             raise ValueError("horizon must be at least 1")
         return self.ic[name] * self.persistence[name] ** (horizon - 1)
 
+    def cumulative_ic_at(self, name: str, horizon: int = 1) -> float:
+        """Population IC of ``name`` against the return summed over the next ``horizon`` months.
+
+        The numerator adds the single-month ICs. The denominator is the standard deviation
+        of the summed standardized return, which exceeds ``sqrt(horizon)`` because the
+        persistent signal makes monthly returns positively correlated: the covariance
+        between months ``j`` apart is ``sum_k ic_k**2 * rho_k**j``. This is exact for
+        summed returns and an approximation for compounded ones.
+        """
+        if horizon < 1:
+            raise ValueError("horizon must be at least 1")
+        numerator = sum(self.ic_at(name, h) for h in range(1, horizon + 1))
+        variance = float(horizon)
+        for gap in range(1, horizon):
+            covariance = sum(self.ic[k] ** 2 * self.persistence[k] ** gap for k in self.ic)
+            variance += 2.0 * (horizon - gap) * covariance
+        return numerator / float(np.sqrt(variance))
+
     def rank_ic_at(self, name: str, horizon: int = 1) -> float:
         """Population Spearman IC. For a bivariate normal pair with correlation ``rho``,
         Spearman's correlation is ``(6 / pi) * asin(rho / 2)``."""
