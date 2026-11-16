@@ -265,3 +265,31 @@ Six backtests are in the ledger for this data. For trees, the deflated Sharpe ra
 - What is reported, whatever it shows: net Sharpe ratio with its bootstrap interval, return, volatility, drawdown, composite rank IC, and the factor regression.
 - What is expected: a lower Sharpe ratio than in sample. Five years give a wide interval (a standard error near 0.45 for an annual Sharpe ratio), so an interval that includes zero would not be a surprise and one that excludes it would not be proof.
 - Nothing from decision 72's caveats is fixed first. Raising the cost or dropping reversal now would be a choice made after seeing in-sample results, and it would change what the holdout tests. They stay as stated limitations.
+
+## Milestone 6, part 5: the holdout
+
+**74. The holdout was evaluated once, and the strategy lost money.** `uv run python scripts/run_real.py --holdout`, run on 2026-11-16 after the freeze in decision 73 was committed and pushed (commit `4d680c6`).
+
+| | In sample | Holdout |
+| --- | --- | --- |
+| Period | 1969-08 to 2020-12 | 2021-01 to 2025-12 |
+| Net Sharpe ratio | 1.50 | −0.37 |
+| 95% bootstrap interval | 1.12 to 1.90 | −1.20 to 0.40 |
+| Annual return | 20.0% | −5.4% |
+| Annual volatility | 13.3% | 14.8% |
+| Maximum drawdown | −41% | −44% |
+| Composite rank IC | 0.039 | 0.009 |
+| Alpha per month against FF5 and momentum (t) | 1.45% (7.1) | −0.34% (−0.7) |
+
+In the holdout regression the loading on the market is −0.28 (t −2.2); no other loading is distinguishable from zero.
+
+What can be said:
+
+- The two Sharpe intervals do not overlap. The drop is larger than sixty months of noise would explain on its own.
+- The composite still ranks stocks slightly in the right direction (rank IC 0.009), and the portfolio still loses. A small rank IC with turnover above 100% a month does not cover its costs.
+- The deflated Sharpe ratio (1.000) and the probability of backtest overfitting (0.071) did not warn of this, and were not built to. They correct for choosing among the configurations that were tried. They say nothing about whether the cost model is realistic, whether an input such as one-month reversal can be traded, or whether the market after 2020 behaves like the market before it.
+- Decision 72 listed the reasons the in-sample numbers were too good before the holdout was run. That list is the best available account, and it is untested.
+
+What was not done: no second run, no breakdown of the holdout by year or by factor, no run of the other five methods. Each would be another look at the same five years. The holdout is spent; any further real-data work needs new data or has to treat 2021 to 2025 as in-sample.
+
+Both remaining acceptance criteria are met: real-data numbers come from one documented command each, and the holdout was evaluated once and is reported.
