@@ -1,0 +1,61 @@
+{
+  "method": "trees",
+  "window": [
+    "2021-01-31",
+    "2025-12-31"
+  ],
+  "cost_rate": 0.001,
+  "months": 60,
+  "mean_annual": -0.053971462963310124,
+  "vol_annual": 0.14806672979244648,
+  "sharpe": -0.36450769892037843,
+  "sharpe_low": -1.2010254503154996,
+  "sharpe_high": 0.39907033617343385,
+  "max_drawdown": -0.441606194360773,
+  "composite_rank_ic": 0.008562616955065841,
+  "attribution": {
+    "alpha": {
+      "coefficient": -0.003395,
+      "std_error": 0.004645,
+      "t_stat": -0.730853,
+      "p_value": 0.464869
+    },
+    "Mkt-RF": {
+      "coefficient": -0.281661,
+      "std_error": 0.126121,
+      "t_stat": -2.233267,
+      "p_value": 0.025531
+    },
+    "SMB": {
+      "coefficient": -0.180214,
+      "std_error": 0.249726,
+      "t_stat": -0.721647,
+      "p_value": 0.470512
+    },
+    "HML": {
+      "coefficient": 0.061332,
+      "std_error": 0.163272,
+      "t_stat": 0.375641,
+      "p_value": 0.707184
+    },
+    "RMW": {
+      "coefficient": 0.157971,
+      "std_error": 0.214517,
+      "t_stat": 0.736403,
+      "p_value": 0.461485
+    },
+    "CMA": {
+      "coefficient": -0.041815,
+      "std_error": 0.158929,
+      "t_stat": -0.263104,
+      "p_value": 0.792471
+    },
+    "Mom": {
+      "coefficient": -0.257065,
+      "std_error": 0.177765,
+      "t_stat": -1.44609,
+      "p_value": 0.148152
+    }
+  },
+  "r_squared": 0.14642926752098562
+}

@@ -222,3 +222,74 @@ None of this has been run against WRDS or the Ken French site. The queries follo
 **68. The research sample starts in July 1963.** Earlier months are used to compute momentum, volatility and beta and are then dropped, so the first month of the panel already has its history.
 
 **69. No real-data number goes into this repository until the data terms are confirmed** (SPEC decision D6). The in-sample factor screen has been run and looked at; its numbers are not recorded here.
+
+## Milestone 6, part 4: the in-sample run on CRSP and Compustat
+
+Calculated based on data from CRSP US Stock Database, © Center for Research in Security Prices (CRSP), The University of Chicago Booth School of Business, and from Compustat, © S&P Global Market Intelligence. No security-level data is published here.
+
+**70. Aggregate results from WRDS data may be published.** Confirmed by the author on 2026-11-16 (SPEC decision D6). This replaces decision 69.
+
+**71. Rank IC and mean returns disagree for factors tied to volatility.** In sample, within the universe:
+
+| Factor | Rank IC (t) | Pearson IC (t) | Top-minus-bottom quintile, % per month (t) |
+| --- | --- | --- | --- |
+| Size (small) | −0.010 (−2.1) | +0.005 (1.2) | +0.22 (1.8) |
+| Volatility (low) | +0.028 (3.4) | +0.017 (2.1) | +0.05 (0.2) |
+| Beta (low) | +0.018 (2.3) | +0.010 (1.2) | −0.04 (−0.2) |
+| Momentum | +0.032 (5.4) | +0.029 (5.2) | +0.88 (4.4) |
+
+Across all stocks, without the size cut, the gap is wider: the rank IC of size is −0.053 (t −10.0) while small stocks earn 0.71% a month more than large ones (t 3.1). A rank correlation compares typical outcomes, and the typical return of a volatile stock is well below its average return, because a few large gains carry the average. So rank IC rewards any characteristic that sorts stocks by low volatility, whether or not it earns anything. Low volatility and low beta pass the rank-IC screen here with no return spread at all.
+
+This was found by a diagnostic after the first screen, on in-sample data only. The screen was left as built (decision 14) and now reports Pearson IC and the quantile spread next to the rank IC. On real data the three should be read together, and the spread is the one that corresponds to money. ICIR weighting inherits the tilt, since it weights by rank IC; momentum, factor MVO, ridge and trees are fitted to returns and do not.
+
+**72. In-sample results.** `uv run python scripts/run_real.py` (about eight minutes). July 1963 to December 2020, universe at or above the NYSE 20th size percentile (1,822 stocks on average), ten basis points of traded value per trade, compared on the 617 months from August 1969 in which every method traded:
+
+| Method | Net Sharpe | 95% interval | Annual return | Annual volatility | Max drawdown | Monthly turnover |
+| --- | --- | --- | --- | --- | --- | --- |
+| Factor momentum | 0.70 | 0.43 to 1.01 | 10.4% | 14.8% | −37% | 1.02 |
+| ICIR | 0.91 | 0.58 to 1.26 | 11.8% | 13.0% | −36% | 1.30 |
+| Equal weight | 1.15 | 0.75 to 1.54 | 16.1% | 14.0% | −42% | 1.32 |
+| Factor MVO | 1.27 | 0.95 to 1.57 | 15.7% | 12.4% | −27% | 1.19 |
+| Ridge | 1.27 | 0.90 to 1.64 | 18.7% | 14.7% | −38% | 1.67 |
+| Trees | 1.50 | 1.12 to 1.90 | 20.0% | 13.3% | −41% | 1.65 |
+
+Six backtests are in the ledger for this data. For trees, the deflated Sharpe ratio is 1.000 against a hurdle of 0.38, the probability of backtest overfitting over the six methods is 0.071, and the regression on the Fama-French five factors and momentum leaves an alpha of 1.45% a month (t 7.1) with an R-squared of 0.08. Every solve finished at degradation level 0.
+
+**These numbers are too good, and the reasons are known.** Turnover is above 100% of net asset value every month, and the cost is a flat ten basis points for the whole period, including decades when spreads were many times that. One of the strongest inputs is one-month reversal, which is known to be largely a bid-ask effect that cannot be traded at closing prices. There is no market impact and no borrow fee. The ordering of methods is also the reverse of the synthetic panel, where trees had nothing to add. The table shows that the pipeline runs end to end on real data and that its statistics behave; it is not evidence of a tradable strategy.
+
+**73. The design is frozen here, before the holdout is read.**
+
+- Configuration: gradient-boosted trees with default settings, all eleven factors, one-month horizon, no embargo; mean-variance portfolio with default settings and the structural risk model; ten basis points per trade.
+- Rule: the method with the highest in-sample net Sharpe ratio on the common months. That is trees. The rule was fixed before the in-sample run; the method follows from it.
+- Holdout: January 2021 to December 2025, run once by `scripts/run_real.py --holdout`, which refuses to run again once its result file exists.
+- What is reported, whatever it shows: net Sharpe ratio with its bootstrap interval, return, volatility, drawdown, composite rank IC, and the factor regression.
+- What is expected: a lower Sharpe ratio than in sample. Five years give a wide interval (a standard error near 0.45 for an annual Sharpe ratio), so an interval that includes zero would not be a surprise and one that excludes it would not be proof.
+- Nothing from decision 72's caveats is fixed first. Raising the cost or dropping reversal now would be a choice made after seeing in-sample results, and it would change what the holdout tests. They stay as stated limitations.
+
+## Milestone 6, part 5: the holdout
+
+**74. The holdout was evaluated once, and the strategy lost money.** `uv run python scripts/run_real.py --holdout`, run on 2026-11-16 after the freeze in decision 73 was committed and pushed (commit `4d680c6`).
+
+| | In sample | Holdout |
+| --- | --- | --- |
+| Period | 1969-08 to 2020-12 | 2021-01 to 2025-12 |
+| Net Sharpe ratio | 1.50 | −0.37 |
+| 95% bootstrap interval | 1.12 to 1.90 | −1.20 to 0.40 |
+| Annual return | 20.0% | −5.4% |
+| Annual volatility | 13.3% | 14.8% |
+| Maximum drawdown | −41% | −44% |
+| Composite rank IC | 0.039 | 0.009 |
+| Alpha per month against FF5 and momentum (t) | 1.45% (7.1) | −0.34% (−0.7) |
+
+In the holdout regression the loading on the market is −0.28 (t −2.2); no other loading is distinguishable from zero.
+
+What can be said:
+
+- The two Sharpe intervals do not overlap. The drop is larger than sixty months of noise would explain on its own.
+- The composite still ranks stocks slightly in the right direction (rank IC 0.009), and the portfolio still loses. A small rank IC with turnover above 100% a month does not cover its costs.
+- The deflated Sharpe ratio (1.000) and the probability of backtest overfitting (0.071) did not warn of this, and were not built to. They correct for choosing among the configurations that were tried. They say nothing about whether the cost model is realistic, whether an input such as one-month reversal can be traded, or whether the market after 2020 behaves like the market before it.
+- Decision 72 listed the reasons the in-sample numbers were too good before the holdout was run. That list is the best available account, and it is untested.
+
+What was not done: no second run, no breakdown of the holdout by year or by factor, no run of the other five methods. Each would be another look at the same five years. The holdout is spent; any further real-data work needs new data or has to treat 2021 to 2025 as in-sample.
+
+Both remaining acceptance criteria are met: real-data numbers come from one documented command each, and the holdout was evaluated once and is reported.

@@ -1,6 +1,6 @@
 # SPEC: Factor Research Pipeline
 
-Status: v1 scope and decisions D1–D7 fixed on 2026-11-15 (see Decisions at the end). In progress.
+Status: v1 complete on 2026-11-16. Scope and decisions D1–D7 were fixed on 2026-11-15 (see Decisions at the end).
 
 ## Problem
 
@@ -106,8 +106,8 @@ A small set from the published literature. Each definition will cite its paper.
 - [x] The backtest engine passes all eight `backtest-bias-suite` traps in CI.
 - [x] The deflated Sharpe ratio uses the trial count read from the ledger, and a test fails if a configuration is evaluated without being logged.
 - [x] The full pipeline runs on the synthetic panel from a clean clone with one command, without WRDS access.
-- [ ] Every real-data number in the README is produced by one documented command for a reader with WRDS access, and is labelled as such.
-- [ ] The holdout period is evaluated once, and the README reports it.
+- [x] Every real-data number in the README is produced by one documented command for a reader with WRDS access, and is labelled as such.
+- [x] The holdout period is evaluated once, and the README reports it.
 - [x] `uv run pytest` and ruff pass in CI.
 - [x] README: one-sentence problem, quick-start demo, results with numbers, design trade-offs, Limitations.
 
@@ -118,7 +118,7 @@ A small set from the published literature. Each definition will cite its paper.
 3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger. Done.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter. Done.
 5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution. Done. The regression is in place; loading the Fama–French factors moves to milestone 6 with the other real data.
-6. **WRDS loader, real-data run, holdout, README.** Done: structural risk model, loaders and factor definitions (tested on hand-made tables), README with synthetic results. Open: the smoke run against a live account, the real-data run and the holdout.
+6. **WRDS loader, real-data run, holdout, README.** Done: structural risk model, loaders and factor definitions (tested on hand-made tables), README with synthetic results. The real-data run and the single holdout evaluation are also done; see DECISIONS.md, decisions 72 to 74.
 
 Each milestone is one branch and one PR.
 
@@ -169,5 +169,5 @@ The difference here is the combination: a synthetic ground truth for the researc
 | D3 | Factor list | The eleven above |
 | D4 | Universe | Common stocks on NYSE, AMEX and NASDAQ, excluding names below the NYSE 20th size percentile |
 | D5 | Sample and holdout | 1963-07 onward; the final five years as holdout |
-| D6 | Publishing WRDS-derived numbers | To be confirmed with the university library before milestone 6. If not allowed, the README reports synthetic results only and gives the commands for subscribers |
+| D6 | Publishing WRDS-derived numbers | Confirmed by the author on 2026-11-16: aggregate statistics may be published. No security-level data is published, and results carry the CRSP attribution line |
 | D7 | How `robust-mvo` and `backtest-bias-suite` are consumed | As git dependencies pinned to a commit |

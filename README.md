@@ -15,6 +15,8 @@ Pick the best of 40 strategies and it will look good. This is what the pipeline 
 
 On pure noise the winner passes a test at 5% and its bootstrap interval excludes zero. Neither knows that 40 things were tried. Its Sharpe ratio is almost exactly what the best of 40 skill-free strategies is expected to show.
 
+On U.S. equities, the one configuration chosen in sample had a net Sharpe ratio of 1.50 through 2020 and −0.37 on the five years held back. Both numbers are reported [below](#real-data).
+
 ## Quick start
 
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
@@ -52,7 +54,7 @@ panel ──> factor evaluation ──> combination ──> portfolio ──> ba
 
 ## Results
 
-All numbers below are from synthetic data. Each table names the command that prints it.
+All numbers in this section are from synthetic data. Each table names the command that prints it. Real-data results are in the next section.
 
 ### One run of the whole pipeline
 
@@ -118,23 +120,71 @@ A risk model built from the alpha factors alone understates the risk of beta and
 
 ## Real data
 
-The pipeline has loaders for CRSP and Compustat through WRDS and for the Ken French factor library, and definitions for eleven published factors. The WRDS queries were run against a live account on 2026-11-16 and the panel builds from them in under a minute. **No real-data result is reported here yet**, and the Ken French loader has not been run. No WRDS data is stored in this repository.
+Calculated based on data from CRSP US Stock Database, © Center for Research in Security Prices (CRSP), The University of Chicago Booth School of Business, and from Compustat, © S&P Global Market Intelligence. No security-level data is in this repository.
 
-The last five years of data, January 2021 to December 2025, are a holdout. Research code loads data with an end date of December 2020, so later months never reach a data frame. The holdout will be evaluated once, after every design choice is fixed.
-
-With a WRDS account:
+U.S. common stocks at or above the NYSE 20th size percentile (1,822 on average), eleven published factors, monthly, ten basis points of traded value per trade. The last five years were set aside before any result was read.
 
 ```bash
-WRDS_USERNAME=<user> uv run --no-project --with wrds scripts/wrds_download.py --smoke
 WRDS_USERNAME=<user> uv run --no-project --with wrds scripts/wrds_download.py
-uv run python scripts/wrds_check_panel.py
+uv run python scripts/run_real.py            # in sample, about eight minutes
+uv run python scripts/run_real.py --holdout  # refuses to run a second time
 ```
 
 The download runs in its own environment because the `wrds` package requires an older pandas than this project.
 
+### The result
+
+| | In sample | Holdout |
+| --- | --- | --- |
+| Period | August 1969 to December 2020 | January 2021 to December 2025 |
+| Net Sharpe ratio | 1.50 | −0.37 |
+| 95% bootstrap interval | 1.12 to 1.90 | −1.20 to 0.40 |
+| Annual return | 20.0% | −5.4% |
+| Annual volatility | 13.3% | 14.8% |
+| Maximum drawdown | −41% | −44% |
+| Composite rank IC | 0.039 | 0.009 |
+| Alpha against Fama–French five factors and momentum, per month | 1.45% (t 7.1) | −0.34% (t −0.7) |
+
+The configuration was chosen by a rule fixed in advance (the method with the best in-sample net Sharpe ratio, which was gradient-boosted trees), committed, and then run on the holdout once. **It lost money out of sample.** The two intervals do not overlap, so this is more than five noisy years.
+
+In sample, the deflated Sharpe ratio was 1.000 and the probability of backtest overfitting 0.071. Both were right about what they measure: the result was not an accident of picking one of six methods. Neither measures whether the backtest's assumptions hold. The in-sample numbers were flagged as too good before the holdout was run, for reasons written down at the time: turnover above 100% a month at a flat ten basis points, one-month reversal as a main input, no market impact, no borrow fee. Which of these, or a change in the market itself, explains the holdout was not investigated, because any further analysis of those five years would be a second look.
+
+### In sample, all six methods
+
+617 months in which every method traded.
+
+| Method | Net Sharpe | 95% interval | Annual return | Max drawdown | Monthly turnover |
+| --- | --- | --- | --- | --- | --- |
+| Factor momentum | 0.70 | 0.43 to 1.01 | 10.4% | −37% | 1.02 |
+| ICIR | 0.91 | 0.58 to 1.26 | 11.8% | −36% | 1.30 |
+| Equal weight | 1.15 | 0.75 to 1.54 | 16.1% | −42% | 1.32 |
+| Factor MVO | 1.27 | 0.95 to 1.57 | 15.7% | −27% | 1.19 |
+| Ridge | 1.27 | 0.90 to 1.64 | 18.7% | −38% | 1.67 |
+| Trees | 1.50 | 1.12 to 1.90 | 20.0% | −41% | 1.65 |
+
+Only trees were run on the holdout. How the other five did there is not known.
+
+### Rank IC and returns can disagree
+
+| Factor | Rank IC (t) | Top-minus-bottom quintile, % per month (t) |
+| --- | --- | --- |
+| Momentum | 0.032 (5.4) | 0.88 (4.4) |
+| Reversal | 0.030 (7.4) | 0.59 (4.3) |
+| Share issuance | 0.018 (5.2) | 0.48 (4.3) |
+| Gross profitability | 0.015 (3.2) | 0.40 (3.6) |
+| Asset growth | 0.009 (2.3) | 0.40 (3.7) |
+| Earnings yield | 0.024 (4.0) | 0.35 (1.8) |
+| Book-to-market | 0.013 (2.1) | 0.30 (1.5) |
+| Accruals | 0.007 (2.3) | 0.26 (3.3) |
+| Size (small) | −0.010 (−2.1) | 0.22 (1.8) |
+| Volatility (low) | 0.028 (3.4) | 0.05 (0.2) |
+| Beta (low) | 0.018 (2.3) | −0.04 (−0.2) |
+
+Low volatility and low beta have a clearly positive rank IC and no return spread; size has a negative rank IC and a positive spread. A rank correlation compares typical outcomes, and the typical return of a volatile stock is well below its average, because a few large gains carry the average. Rank IC therefore rewards any characteristic that sorts stocks by low volatility. The screen reports all three measures; the spread is the one that corresponds to money.
+
 ## Design trade-offs
 
-[DECISIONS.md](DECISIONS.md) records 65 choices with the alternative that was rejected. The ones that shape the project:
+[DECISIONS.md](DECISIONS.md) records 74 choices with the alternative that was rejected. The ones that shape the project:
 
 - **A synthetic ground truth first.** Research code is hard to test on real data because nobody knows the right answer. The cost is that every result here describes a world that is simpler than a real market.
 - **Trial counts are read, not declared.** The deflated Sharpe ratio takes its number of trials from the ledger. The cost is that a deflated ratio needs a ledger; the benefit is that failed attempts cannot be left out.
@@ -145,7 +195,9 @@ The download runs in its own environment because the `wrds` package requires an 
 
 ## Limitations
 
-- **Synthetic results only.** Nothing here says a strategy works on real markets, and no real-data number is reported.
+- **The real-data strategy did not survive its holdout.** Nothing here is evidence of a tradable strategy.
+- **One look at five years.** The holdout interval is wide, and why the result changed sign was not investigated, to keep it a single look.
+- **Backtest costs are optimistic.** A flat ten basis points for 1963 to 2025, with turnover above 100% a month.
 - **The synthetic world is kind.** A linear truth, independent factors, a constant signal, one volatility for every asset, and delistings unrelated to the signal. Ridge wins because the world is linear; trees have nothing extra to find.
 - **Trials are counted as independent.** Variations of one idea are correlated, so the count overstates the effective number and the deflated ratio is conservative.
 - **A combination that is scored but never backtested does not count** toward the deflated Sharpe ratio. Comparing many combinations by IC and backtesting only the best understates the search.
@@ -163,7 +215,7 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-215 tests. The suite runs without network access and without paid services.
+218 tests. The suite runs without network access and without paid services.
 
 ## References
 

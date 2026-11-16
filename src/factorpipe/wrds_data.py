@@ -427,3 +427,21 @@ def build_panel(
         if universe is not None:
             universe = universe.loc[keep, returns.columns]
     return Panel(returns, characteristics, crsp.industry, universe)
+
+
+def restrict_to_universe(panel: Panel) -> Panel:
+    """Drop securities that are never in the research universe.
+
+    They can never be scored or held, so this changes no result that is computed on
+    investable assets. It roughly halves the memory the later steps need.
+    """
+    if panel.universe is None:
+        return panel
+    keep = panel.universe.any()
+    columns = keep.index[keep]
+    return Panel(
+        panel.returns[columns],
+        {name: frame[columns] for name, frame in panel.characteristics.items()},
+        None if panel.industry is None else panel.industry[columns],
+        panel.universe[columns],
+    )
