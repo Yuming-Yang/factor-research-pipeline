@@ -92,3 +92,29 @@ Mean composite IC over five seeds (500 assets, 240 months, 2 planted and 10 nois
 | Ridge | 0.053 |
 
 The order is specific to this panel: the true model is linear, the factors are independent and the signal is stable. It says the methods work as built. It does not say which one to prefer on real data.
+
+## Milestone 4: portfolio construction and backtest
+
+**28. One engine for the trap tests and for the results.** `backtest-bias-suite` tests daily bars with opens, closes, splits, dividends and borrow fees; the pipeline trades monthly total returns. The engine is written for bars of raw prices, so the suite can test it as it is, and `market_from_panel` turns a panel into prices for the same engine: a total-return index per asset, with each month's open equal to the previous month's close. An order decided at the end of month `t` is therefore filled at that month-end price and earns the return of `t+1`. Rejected: a separate returns-based engine for the pipeline, which would leave the engine that produces the results untested by the suite.
+
+**29. The engine was written without reading from the suite's reference engine at run time, and in a different style.** It follows the same published semantics (sizing at the fill, costs out of cash, fractional shares, cancelled orders, delisting cash at the last close, corporate actions at the open) because those define a pass. It shares no code with the reference engine, and `btbias` is a development dependency only.
+
+**30. What the eight traps do and do not test here.** The engine has no notion of fundamentals or index membership. For T3 and T7 the probe checks therefore exercise the slicing in the test adapter, not the engine; their outcome checks, and all of T1, T2, T4, T5, T6 and T8, test the engine. The pipeline's own point-in-time logic is `pit.py`, tested separately in milestone 1.
+
+**31. A second check that does not depend on the suite.** The top-minus-bottom quantile portfolio traded through the engine gives the same monthly return as the spread computed directly from forward returns in the evaluation module, to 1e-12, on a panel with late listings and delistings. The two share no code beyond the panel.
+
+**32. An asset cannot be bought in its first listed month.** It has a month-end price but no earlier one, so it gets no open. This matches `Panel.investable` one month earlier, where the asset is not yet listed.
+
+**33. A return of -100% is floored.** The price index multiplies by `1 + r`, and a zero price cannot be traded or divided by. The growth factor is floored at 1e-9, which turns the position into a value of about zero.
+
+**34. Scores become expected returns by the Grinold rule,** `alpha = IC x volatility x z`. The IC is the trailing mean rank IC of the composite score, known at the decision date and floored at zero; volatility is each asset's trailing standard deviation of monthly returns. Rejected: feeding scores to the optimizer directly, which leaves the risk aversion and cost terms without a common unit.
+
+**35. The risk model is deliberately simple.** Exposures are the standardized factors at the decision date, the factor covariance is the Ledoit-Wolf estimate on factor returns realized by then, and idiosyncratic variance is trailing total variance minus the factor part, floored at a quarter of the total. The alpha factors double as risk factors; there is no market, industry or size factor. Dollar neutrality removes a common market move only if betas are equal, which holds in the synthetic panel and not in real data. This has to be revisited before the real-data run.
+
+**36. The optimizer runs inside the engine's decision callback.** It starts from the weights the book has drifted to, so turnover and costs are measured against real holdings. Constraints hold for the targets at the decision; month-end weights drift away from them, so a recorded month-end weight can exceed the position cap.
+
+**37. Before there is enough history, the portfolio stays in cash.** The optimized portfolio needs 12 months for volatility and IC and 24 months of factor returns. No order is sent until then.
+
+**38. Portfolio settings are trials.** Risk aversion, caps, turnover penalty, cost and borrow rates and the quantile count are recorded with the identifier of the combination they were applied to. A combination and one portfolio built on it count as two trials.
+
+**39. Defaults were not tuned.** Risk aversion 5, position cap 2%, gross cap 2, windows of 36 and 60 months. They give a book that uses its caps on the synthetic panel. Choosing them by looking at backtest results would be a trial each.
