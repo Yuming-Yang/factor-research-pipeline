@@ -86,7 +86,7 @@ A small set from the published literature. Each definition will cite its paper.
 | Asset growth | Cooper, Gulen and Schill (2008) |
 | Accruals | Sloan (1996) |
 | Net share issuance | Pontiff and Woodgate (2008) |
-| Idiosyncratic volatility | Ang, Hodrick, Xing and Zhang (2006) |
+| Volatility | Ang, Hodrick, Xing and Zhang (2006). Their measure is idiosyncratic volatility from daily returns; v1 has monthly data only and uses total volatility over 36 months |
 | Market beta | Frazzini and Pedersen (2014) |
 
 ## Non-goals
@@ -130,7 +130,7 @@ Versions are the latest on PyPI on the check date. None was installed or run for
 | --- | --- | --- | --- |
 | `robust-mvo` | git | Portfolio construction | MIT |
 | `backtest-bias-suite` | git | Engine tests (dev) | MIT |
-| `wrds` | 3.5.0 | WRDS access (optional extra) | BSD-3-Clause |
+| `wrds` | 3.5.0 | WRDS access. Not a dependency: it pins pandas below 2.3, so the download script runs in its own environment | BSD-3-Clause |
 | `alphalens-reloaded` | 0.5.1 | Test oracle (dev) | Apache-2.0 |
 | `statsmodels` | 0.15.0 | Newey–West, regressions | BSD-3-Clause |
 | `scikit-learn` | ≥ 1.9 | Ridge, gradient boosting | BSD-3-Clause |

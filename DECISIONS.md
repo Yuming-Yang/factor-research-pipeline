@@ -188,3 +188,27 @@ The styles-only model understates the risk of beta and industry tilts by 40% to 
 ### What changes in the portfolio
 
 At the default risk aversion, on the same three panels: mean absolute net beta of the targets is 0.047, 0.048 and 0.036 with the structural model against 0.049, 0.085 and 0.087 with styles only; the largest net industry position is 0.045 to 0.071 against 0.081 to 0.113. Sharpe ratios are within 0.12 of each other in every case. So the model forecasts risk much better and moves the book moderately: in one of the three panels the beta exposure does not change. Neither constraint is hard. If a book has to be beta or industry neutral, that needs a constraint in the optimizer, which `robust-mvo` does not have.
+
+## Milestone 6, part 2: real-data loaders
+
+None of this has been run against WRDS or the Ken French site. The queries follow the published documentation; everything downstream is tested on hand-made tables in the same shape.
+
+**56. The `wrds` package is not a dependency.** Version 3.5.0 requires pandas below 2.3 and this project runs on pandas 3. `scripts/wrds_download.py` runs in its own environment (`uv run --no-project --with wrds`), imports only the query module, and writes three CSV files to `data/wrds`, which is git-ignored. CSV is used because it does not depend on the pandas version on either side. The script has a `--smoke` mode that fetches five years and prints the tables' shapes and columns, to be run first.
+
+**57. Common stock filters use the CIZ flags.** `sharetype = 'NS'`, `securitytype = 'EQTY'`, `securitysubtype = 'COM'`, `usincflg = 'Y'`, `issuertype in ('ACOR', 'CORP')`, on exchanges N, A and Q, with `conditionaltype = 'RW'` and `tradingstatusflg = 'A'`. These replace share codes 10 and 11 and exchange codes 1 to 3 of the old format. The monthly return in this format already includes the delisting return.
+
+**58. A security with a gap keeps its longest unbroken spell.** The panel needs one spell per asset (decision 4). Months outside the longest spell are dropped and counted, and the count is printed by the check script. Rejected: filling gaps with zero returns, which invents data.
+
+**59. Annual accounts become public six months after the fiscal year end** and expire after eighteen. Compustat's annual file has no publication date; six months is the convention behind the June rebalance in Fama and French (1992). The quarterly file has an announcement date and would be more precise; it is not used in v1.
+
+**60. Book-to-market and earnings yield use the current month's market value.** Fama and French divide by the December market value; using the latest price mixes in a little momentum. It is the simpler choice and a known variant.
+
+**61. Every factor is signed so that higher means a higher expected return in its source paper.** Size, reversal, asset growth, accruals, share issuance, volatility and beta enter with a minus sign. Equal weighting relies on this.
+
+**62. Three factors deviate from their papers.** Volatility is total volatility of monthly returns over 36 months, not idiosyncratic volatility from daily returns. Share issuance is annual, from Compustat split-adjusted shares, not monthly from CRSP. Beta is the trailing slope on the equal-weighted market over 60 months, without the shrinkage or the separate volatility and correlation windows of Frazzini and Pedersen.
+
+**63. The research universe is a mask on the panel.** `Panel.universe` marks assets at or above the NYSE 20th size percentile each month. An asset outside it keeps its returns, so a position held when it drops out earns them until it is sold, but it is not investable: it gets no forward return, no score and no place in the risk model.
+
+**64. Industries are the ten SIC divisions,** from the last SIC code on file for each security.
+
+**65. The Ken French reader takes the fetch function as an argument.** Tests pass in zip files written in the library's layout, so no test touches the network. The parser reads the monthly section, stops at the annual one, strips padded column names and turns the missing-value codes into missing values.
