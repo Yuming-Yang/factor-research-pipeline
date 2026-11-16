@@ -118,3 +118,41 @@ The order is specific to this panel: the true model is linear, the factors are i
 **38. Portfolio settings are trials.** Risk aversion, caps, turnover penalty, cost and borrow rates and the quantile count are recorded with the identifier of the combination they were applied to. A combination and one portfolio built on it count as two trials.
 
 **39. Defaults were not tuned.** Risk aversion 5, position cap 2%, gross cap 2, windows of 36 and 60 months. They give a book that uses its caps on the synthetic panel. Choosing them by looking at backtest results would be a trial each.
+
+## Milestone 5: overfitting statistics
+
+**40. Inference on the Sharpe ratio is per period.** The standard error `sqrt((1 - skew*SR + (kurt-1)/4*SR^2) / (n-1))` is stated for the per-period ratio, so everything is computed per month and annualized only for display. The formula assumes returns are not autocorrelated; the bootstrap interval does not.
+
+**41. A trial, for the deflated Sharpe ratio, is a backtest.** `deflated_sharpe_from_ledger` counts the ledger entries whose method starts with `portfolio`, that ran on the same data, and that have a recorded Sharpe ratio. The count and the variance of those Sharpe ratios are read from the file, not passed in. A combination that was scored but never backtested is in the ledger and is not counted here, because it produced no Sharpe ratio to select on. That is a gap: looking at ICs across many combinations and backtesting only the best one understates the count.
+
+**42. The ledger stores results as separate lines.** `record_result` appends the per-period Sharpe ratio and the number of periods for a trial. Trial lines never change, and a repeated run appends an identical result.
+
+**43. With one trial the hurdle is zero.** There is no selection to correct for, and the deflated ratio equals the probabilistic one.
+
+**44. Trials are treated as independent.** The expected-maximum formula assumes independent trials. Variations of one idea are correlated, so the count overstates the effective number of trials and the deflated ratio is conservative. Bailey and Lopez de Prado suggest clustering trials to estimate an effective number; that is not implemented.
+
+**45. A real factor among the trials raises the hurdle.** The variance of trial Sharpe ratios includes the good ones. In the demonstration below the hurdle is 0.87 with a real factor present against 0.44 without. This is conservative, and it follows the definition.
+
+**46. PBO uses contiguous blocks and Sharpe ratios from block sums.** Blocks keep serial dependence inside each block. Each split's Sharpe ratios are computed from per-block sums of returns and squared returns, so 12,870 splits cost a few seconds. The oldest rows are dropped to make the length divisible. PBO is a property of a set of configurations and a selection rule, not of one strategy: it needs the return series of every configuration that was tried.
+
+**47. Bootstrap block length.** The mean block is `n^(1/3)` rounded, about 6 months for 20 years. Rejected for now: the automatic selection of Politis and White (2004), which is the better-founded choice and one more thing to implement and explain. Intervals are percentile intervals with a fixed seed.
+
+**48. Two strategies are compared by resampling the same months for both.** The interval for a Sharpe difference is then much tighter than two separate intervals would suggest when the strategies share most of their risk. A test builds two series with a common component and checks this.
+
+**49. Factor attribution is a regression with Newey-West errors, and the factor data is not loaded yet.** `hac_regression` returns the intercept and loadings; it matches statsmodels to 1e-8. The synthetic panel has no Fama-French factors, so the regression is tested on generated factor returns. Loading the Ken French library moves to milestone 6.
+
+### What selection does, and what the statistics say about it
+
+`uv run python scripts/overfitting_demo.py` (about 15 seconds). Two panels of 300 assets and 240 months. In each, 40 factors are each traded as a long-short quantile portfolio and the best is picked.
+
+| | 40 noise factors | 2 real + 38 noise |
+| --- | --- | --- |
+| Best factor | `noise_18` | `planted_strong` |
+| Its annualized Sharpe ratio | 0.42 | 1.96 |
+| 95% bootstrap interval | 0.04 to 0.82 | 1.60 to 2.41 |
+| P(true Sharpe > 0), unadjusted | 0.968 | 1.000 |
+| Sharpe expected from the best of 40 with no skill | 0.44 | 0.87 |
+| Deflated Sharpe ratio | 0.467 | 1.000 |
+| Probability of backtest overfitting | 0.615 | 0.000 |
+
+On pure noise the winner passes an unadjusted test at 5% and its bootstrap interval excludes zero. Neither accounts for the search. Its Sharpe ratio is almost exactly what the best of 40 skill-free strategies is expected to show, the deflated ratio is a coin flip, and the in-sample winner lands in the bottom half out of sample more often than not.
