@@ -142,8 +142,8 @@ Versions are the latest on PyPI on the check date. None was installed or run for
 - CRSP requires an attribution line on any research result made from its data. Raw CRSP data may not be made available to non-subscribers.
 - A WRDS guide on data sharing advises sharing only transformed or aggregated results that cannot be reverse-engineered. This is guidance; the controlling document is the university's subscription agreement.
 - The CRSP site states that Morningstar completed its acquisition of CRSP on 2026-02-02, so terms may change.
-- Not yet confirmed: whether the author's account covers CRSP monthly, Compustat and the CCM link table; and whether aggregate statistics and charts may be published in a public repository. Both must be confirmed before milestone 6.
-- The Ken French data library is public. Its access path from Python was not tested.
+- Aggregate statistics from CRSP and Compustat are published in this repository with the attribution line; raw and security-level data are not. The download on 2026-11-16 covered CRSP monthly, Compustat annual and the CCM link table.
+- The Ken French data library is public. Its files were downloaded and parsed on 2026-11-16.
 
 ## Cost
 
@@ -169,5 +169,5 @@ The difference here is the combination: a synthetic ground truth for the researc
 | D3 | Factor list | The eleven above |
 | D4 | Universe | Common stocks on NYSE, AMEX and NASDAQ, excluding names below the NYSE 20th size percentile |
 | D5 | Sample and holdout | 1963-07 onward; the final five years as holdout |
-| D6 | Publishing WRDS-derived numbers | Confirmed by the author on 2026-11-16: aggregate statistics may be published. No security-level data is published, and results carry the CRSP attribution line |
+| D6 | Publishing WRDS-derived numbers | Decided on 2026-11-16: aggregate statistics are published with the CRSP and Compustat attribution. No raw or security-level data is published |
 | D7 | How `robust-mvo` and `backtest-bias-suite` are consumed | As git dependencies pinned to a commit |

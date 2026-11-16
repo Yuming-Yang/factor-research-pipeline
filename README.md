@@ -217,6 +217,10 @@ uv run ruff format --check .
 
 218 tests. The suite runs without network access and without paid services.
 
+## License
+
+MIT. See [LICENSE](LICENSE). The licence covers the code; CRSP and Compustat data remain subject to their own terms.
+
 ## References
 
 - Bailey, D. and López de Prado, M. (2014). The deflated Sharpe ratio. *Journal of Portfolio Management*.
