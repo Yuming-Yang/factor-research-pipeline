@@ -1,0 +1,226 @@
+{
+  "sample": [
+    "1969-08-31",
+    "2020-12-31"
+  ],
+  "cost_rate": 0.001,
+  "screen": {
+    "size": {
+      "rank_ic": -0.009622,
+      "t_stat": -2.096271,
+      "p_holm": 0.097122,
+      "pearson_ic": 0.0054,
+      "pearson_t": 1.202348,
+      "spread_pct": 0.22017,
+      "spread_t": 1.767507
+    },
+    "book_to_market": {
+      "rank_ic": 0.012628,
+      "t_stat": 2.059588,
+      "p_holm": 0.097122,
+      "pearson_ic": 0.010164,
+      "pearson_t": 1.935966,
+      "spread_pct": 0.299824,
+      "spread_t": 1.496976
+    },
+    "earnings_yield": {
+      "rank_ic": 0.024092,
+      "t_stat": 3.984433,
+      "p_holm": 0.000541,
+      "pearson_ic": 0.00844,
+      "pearson_t": 2.122071,
+      "spread_pct": 0.351437,
+      "spread_t": 1.757376
+    },
+    "momentum": {
+      "rank_ic": 0.031496,
+      "t_stat": 5.39986,
+      "p_holm": 1e-06,
+      "pearson_ic": 0.028456,
+      "pearson_t": 5.172452,
+      "spread_pct": 0.883925,
+      "spread_t": 4.395333
+    },
+    "reversal": {
+      "rank_ic": 0.030326,
+      "t_stat": 7.43184,
+      "p_holm": 0.0,
+      "pearson_ic": 0.019076,
+      "pearson_t": 4.903406,
+      "spread_pct": 0.593067,
+      "spread_t": 4.265
+    },
+    "gross_profitability": {
+      "rank_ic": 0.01462,
+      "t_stat": 3.211685,
+      "p_holm": 0.007918,
+      "pearson_ic": 0.011025,
+      "pearson_t": 3.085217,
+      "spread_pct": 0.399139,
+      "spread_t": 3.555861
+    },
+    "asset_growth": {
+      "rank_ic": 0.008812,
+      "t_stat": 2.308567,
+      "p_holm": 0.097122,
+      "pearson_ic": 0.015923,
+      "pearson_t": 4.959553,
+      "spread_pct": 0.39853,
+      "spread_t": 3.703803
+    },
+    "accruals": {
+      "rank_ic": 0.007064,
+      "t_stat": 2.337284,
+      "p_holm": 0.097122,
+      "pearson_ic": 0.010442,
+      "pearson_t": 3.836331,
+      "spread_pct": 0.262099,
+      "spread_t": 3.268101
+    },
+    "share_issuance": {
+      "rank_ic": 0.017994,
+      "t_stat": 5.179956,
+      "p_holm": 2e-06,
+      "pearson_ic": 0.016577,
+      "pearson_t": 6.170355,
+      "spread_pct": 0.480682,
+      "spread_t": 4.280769
+    },
+    "volatility": {
+      "rank_ic": 0.028014,
+      "t_stat": 3.435944,
+      "p_holm": 0.004133,
+      "pearson_ic": 0.016633,
+      "pearson_t": 2.128504,
+      "spread_pct": 0.046122,
+      "spread_t": 0.175572
+    },
+    "beta": {
+      "rank_ic": 0.018488,
+      "t_stat": 2.28661,
+      "p_holm": 0.097122,
+      "pearson_ic": 0.009852,
+      "pearson_t": 1.249467,
+      "spread_pct": -0.039511,
+      "spread_t": -0.157557
+    }
+  },
+  "methods": {
+    "equal": {
+      "months": 617,
+      "mean_annual": 0.160916,
+      "vol_annual": 0.140177,
+      "sharpe": 1.14795,
+      "sharpe_low": 0.744848,
+      "sharpe_high": 1.540377,
+      "max_drawdown": -0.416887,
+      "composite_rank_ic": 0.044326,
+      "turnover": 1.320322
+    },
+    "icir": {
+      "months": 617,
+      "mean_annual": 0.117974,
+      "vol_annual": 0.130385,
+      "sharpe": 0.904813,
+      "sharpe_low": 0.581141,
+      "sharpe_high": 1.263059,
+      "max_drawdown": -0.356967,
+      "composite_rank_ic": 0.036418,
+      "turnover": 1.301608
+    },
+    "momentum": {
+      "months": 617,
+      "mean_annual": 0.104272,
+      "vol_annual": 0.148239,
+      "sharpe": 0.703408,
+      "sharpe_low": 0.430228,
+      "sharpe_high": 1.00782,
+      "max_drawdown": -0.374233,
+      "composite_rank_ic": 0.030589,
+      "turnover": 1.018736
+    },
+    "mvo": {
+      "months": 617,
+      "mean_annual": 0.157465,
+      "vol_annual": 0.12441,
+      "sharpe": 1.265692,
+      "sharpe_low": 0.953392,
+      "sharpe_high": 1.573994,
+      "max_drawdown": -0.273153,
+      "composite_rank_ic": 0.03456,
+      "turnover": 1.186456
+    },
+    "ridge": {
+      "months": 617,
+      "mean_annual": 0.186762,
+      "vol_annual": 0.147183,
+      "sharpe": 1.268905,
+      "sharpe_low": 0.897163,
+      "sharpe_high": 1.636773,
+      "max_drawdown": -0.3812,
+      "composite_rank_ic": 0.041558,
+      "turnover": 1.668515
+    },
+    "trees": {
+      "months": 617,
+      "mean_annual": 0.199888,
+      "vol_annual": 0.133259,
+      "sharpe": 1.49999,
+      "sharpe_low": 1.119594,
+      "sharpe_high": 1.894624,
+      "max_drawdown": -0.410053,
+      "composite_rank_ic": 0.038878,
+      "turnover": 1.648726
+    }
+  },
+  "best": "trees",
+  "deflated_sharpe": 1.0,
+  "hurdle_annual": 0.3782240897654311,
+  "n_backtests": 6,
+  "pbo": 0.07062937062937064,
+  "attribution": {
+    "alpha": {
+      "coefficient": 0.014465,
+      "std_error": 0.002044,
+      "t_stat": 7.078061,
+      "p_value": 0.0
+    },
+    "Mkt-RF": {
+      "coefficient": 0.044343,
+      "std_error": 0.042916,
+      "t_stat": 1.033265,
+      "p_value": 0.30148
+    },
+    "SMB": {
+      "coefficient": 0.067035,
+      "std_error": 0.060834,
+      "t_stat": 1.101933,
+      "p_value": 0.270491
+    },
+    "HML": {
+      "coefficient": 0.198985,
+      "std_error": 0.066944,
+      "t_stat": 2.972424,
+      "p_value": 0.002955
+    },
+    "RMW": {
+      "coefficient": 0.015081,
+      "std_error": 0.093998,
+      "t_stat": 0.160434,
+      "p_value": 0.872539
+    },
+    "CMA": {
+      "coefficient": -0.099033,
+      "std_error": 0.146192,
+      "t_stat": -0.677415,
+      "p_value": 0.498143
+    },
+    "Mom": {
+      "coefficient": 0.26111,
+      "std_error": 0.055934,
+      "t_stat": 4.668203,
+      "p_value": 3e-06
+    }
+  },
+  "r_squared": 0.08128803451818112
+}

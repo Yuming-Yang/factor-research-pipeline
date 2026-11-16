@@ -169,5 +169,5 @@ The difference here is the combination: a synthetic ground truth for the researc
 | D3 | Factor list | The eleven above |
 | D4 | Universe | Common stocks on NYSE, AMEX and NASDAQ, excluding names below the NYSE 20th size percentile |
 | D5 | Sample and holdout | 1963-07 onward; the final five years as holdout |
-| D6 | Publishing WRDS-derived numbers | To be confirmed with the university library before milestone 6. If not allowed, the README reports synthetic results only and gives the commands for subscribers |
+| D6 | Publishing WRDS-derived numbers | Confirmed by the author on 2026-11-16: aggregate statistics may be published. No security-level data is published, and results carry the CRSP attribution line |
 | D7 | How `robust-mvo` and `backtest-bias-suite` are consumed | As git dependencies pinned to a commit |

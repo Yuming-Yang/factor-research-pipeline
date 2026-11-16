@@ -417,3 +417,21 @@ def test_a_start_date_trims_the_panel_after_factors_are_computed():
         check_freq=False,
     )
     Panel(trimmed.returns, trimmed.characteristics, trimmed.industry, trimmed.universe)
+
+
+def test_dropping_securities_never_in_the_universe_changes_nothing_investable():
+    from factorpipe.wrds_data import restrict_to_universe
+
+    panel = build_panel(made_up_market())
+    never = ~panel.universe.any()
+    forced = panel.universe.copy()
+    forced.iloc[:, :5] = False  # make sure some securities are never in the universe
+    panel = Panel(panel.returns, panel.characteristics, panel.industry, forced)
+    small = restrict_to_universe(panel)
+    assert small.returns.shape[1] == panel.returns.shape[1] - 5 - int(never.iloc[5:].sum())
+    kept = small.assets
+    pd.testing.assert_frame_equal(small.investable, panel.investable[kept])
+    pd.testing.assert_frame_equal(small.forward_returns(3), panel.forward_returns(3)[kept])
+    assert list(small.industry.index) == list(kept)
+    plain = Panel(panel.returns)
+    assert restrict_to_universe(plain) is plain
