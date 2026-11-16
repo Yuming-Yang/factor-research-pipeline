@@ -28,6 +28,7 @@ from factorpipe.combine import Combination, factor_returns, standardize
 from factorpipe.evaluation import MIN_ASSETS, information_coefficient
 from factorpipe.ledger import TrialLedger, fingerprint
 from factorpipe.panel import Panel
+from factorpipe.sharpe import sharpe_ratio
 
 PORTFOLIOS = ("quantile", "mvo")
 
@@ -237,4 +238,9 @@ def backtest_strategy(
         run = run_backtest(market, decide)
         levels = pd.Series(decide.levels, dtype=int)
     targets = getattr(decide, "targets", {})
+    active = run.active_returns
+    if len(active) > 1 and active.std(ddof=1) > 0:
+        ledger.record_result(
+            trial_id, sharpe=float(sharpe_ratio(active, periods_per_year=1)), n_obs=len(active)
+        )
     return StrategyRun(portfolio, recorded, run, levels, trial_id, targets)

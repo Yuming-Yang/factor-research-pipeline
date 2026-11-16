@@ -55,7 +55,28 @@ class TrialLedger:
                 handle.write(json.dumps({"id": trial_id, **entry}, sort_keys=True) + "\n")
         return trial_id
 
+    def record_result(self, trial_id: str, **metrics: float) -> None:
+        """Attach the outcome of a trial, for example its Sharpe ratio.
+
+        Results are appended as their own lines, so the trial lines never change. If a
+        trial is run again, the latest result is the one that is read back.
+        """
+        if trial_id not in {t["id"] for t in self.trials()}:
+            raise KeyError(f"no trial {trial_id!r} in the ledger")
+        entry = {"result_for": trial_id, "metrics": _plain(metrics)}
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, sort_keys=True) + "\n")
+
     def trials(self) -> list[dict[str, Any]]:
+        return [line for line in self._lines() if "method" in line]
+
+    def results(self) -> dict[str, dict[str, Any]]:
+        """Latest recorded metrics by trial identifier."""
+        return {
+            line["result_for"]: line["metrics"] for line in self._lines() if "result_for" in line
+        }
+
+    def _lines(self) -> list[dict[str, Any]]:
         if not self.path.exists():
             return []
         with self.path.open(encoding="utf-8") as handle:

@@ -42,5 +42,6 @@ dev = [
     "btbias",
     "pytest>=9.2.0",
     "ruff>=0.17.5",
+    "scipy>=1.18.1",
     "statsmodels>=0.15.0",
 ]

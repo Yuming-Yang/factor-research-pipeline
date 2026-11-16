@@ -404,6 +404,7 @@ dev = [
     { name = "btbias" },
     { name = "pytest" },
     { name = "ruff" },
+    { name = "scipy" },
     { name = "statsmodels" },
 ]
 
@@ -421,6 +422,7 @@ dev = [
     { name = "btbias", git = "https://github.com/Yuming-Yang/backtest-bias-suite?rev=d5357e3c0bdad7444dc545452446065e07195680" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "ruff", specifier = ">=0.17.5" },
+    { name = "scipy", specifier = ">=1.18.1" },
     { name = "statsmodels", specifier = ">=0.15.0" },
 ]
 

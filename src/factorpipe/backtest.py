@@ -122,6 +122,13 @@ class BacktestRun:
         previous = self.nav.shift(1, fill_value=self.initial_cash)
         return (self.nav / previous - 1.0).rename("return")
 
+    @property
+    def active_returns(self) -> pd.Series:
+        """Returns from the bar of the first fill on, leaving out the time spent in cash
+        before the strategy had enough history to trade."""
+        started = self.turnover.gt(0).cumsum().gt(0)
+        return self.returns[started]
+
 
 Decide = Callable[[pd.Timestamp, Snapshot], "pd.Series | None"]
 
