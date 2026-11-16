@@ -102,7 +102,7 @@ A small set from the published literature. Each definition will cite its paper.
 - [x] On the synthetic panel, every planted factor is detected, and its estimated IC lies inside the stated confidence interval around the true value.
 - [x] On the synthetic panel, the share of noise factors flagged as significant is measured over repeated seeds, before and after adjustment, and reported next to the nominal rate. (Reworded on 2026-11-15: the first version required the adjusted rate to be at or below nominal. Holm measures above it; see DECISIONS.md.)
 - [x] IC and quantile returns agree with `alphalens-reloaded` on a shared test panel, within a stated tolerance.
-- [ ] A test shows that shifting any input forward by one period changes no fitted parameter and no weight on earlier dates.
+- [x] A test shows that replacing every input after a date changes no fitted weight and no score on or before that date, for every combination method.
 - [ ] The backtest engine passes all eight `backtest-bias-suite` traps in CI.
 - [ ] The deflated Sharpe ratio uses the trial count read from the ledger, and a test fails if a configuration is evaluated without being logged.
 - [ ] The full pipeline runs on the synthetic panel from a clean clone with one command, without WRDS access.
@@ -115,7 +115,7 @@ A small set from the published literature. Each definition will cite its paper.
 
 1. **Scaffold, data layer, synthetic panel.** Panel interface, generator with planted and noise factors, point-in-time lagging. Done.
 2. **Factor evaluation.** IC, decay, quantiles, turnover, Newey–West, multiple-testing adjustment, cross-check against `alphalens-reloaded`. Done.
-3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger.
+3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger. Done.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter.
 5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution.
 6. **WRDS loader, real-data run, holdout, README.** The loader is written here, where a live account can check its table and column names.

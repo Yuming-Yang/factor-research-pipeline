@@ -8,6 +8,8 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy>=2.0",
     "pandas>=2.2.1",
+    "robust-mvo",
+    "scikit-learn>=1.9",
 ]
 
 [build-system]
@@ -16,6 +18,9 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "factorpipe"
+
+[tool.uv.sources]
+robust-mvo = { git = "https://github.com/Yuming-Yang/robust-mvo", rev = "4c05caf7a9528ded1a5e342eb5a0d333504479e8" }
 
 [tool.ruff]
 line-length = 100
