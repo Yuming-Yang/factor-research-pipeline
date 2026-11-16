@@ -106,6 +106,15 @@ wheels = [
 ]
 
 [[package]]
+name = "btbias"
+version = "0.1.0"
+source = { git = "https://github.com/Yuming-Yang/backtest-bias-suite?rev=d5357e3c0bdad7444dc545452446065e07195680#d5357e3c0bdad7444dc545452446065e07195680" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pandas" },
+]
+
+[[package]]
 name = "cffi"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -392,6 +401,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "alphalens-reloaded" },
+    { name = "btbias" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "statsmodels" },
@@ -408,6 +418,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "alphalens-reloaded", specifier = ">=0.5.1" },
+    { name = "btbias", git = "https://github.com/Yuming-Yang/backtest-bias-suite?rev=d5357e3c0bdad7444dc545452446065e07195680" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "ruff", specifier = ">=0.17.5" },
     { name = "statsmodels", specifier = ">=0.15.0" },
