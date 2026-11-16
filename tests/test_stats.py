@@ -112,3 +112,52 @@ def test_missing_p_values_stay_missing_and_do_not_count():
     assert np.isnan(adjusted[1])
     np.testing.assert_allclose(adjusted[[0, 2]], [0.02, 0.02])
     assert np.isnan(holm([np.nan, np.nan])).all()
+
+
+def test_hac_regression_matches_statsmodels():
+    import pandas as pd
+
+    from factorpipe.stats import hac_regression
+
+    rng = np.random.default_rng(0)
+    x = pd.DataFrame(rng.normal(0, 0.04, size=(300, 3)), columns=["mkt", "smb", "hml"])
+    y = 0.002 + 0.5 * x["mkt"] - 0.2 * x["hml"] + ar1(300, 0.4, seed=1) * 0.01
+    for lags in (0, 4):
+        ours = hac_regression(y, x, lags=lags)
+        fit = sm.OLS(y.to_numpy(), sm.add_constant(x.to_numpy())).fit(
+            cov_type="HAC", cov_kwds={"maxlags": lags, "use_correction": False}
+        )
+        np.testing.assert_allclose(ours["coefficient"], fit.params, rtol=1e-10)
+        np.testing.assert_allclose(ours["std_error"], fit.bse, rtol=1e-8)
+        np.testing.assert_allclose(ours["p_value"], fit.pvalues, rtol=1e-6)
+        assert ours.attrs["r_squared"] == pytest.approx(fit.rsquared)
+    assert list(ours.index) == ["alpha", "mkt", "smb", "hml"]
+
+
+def test_hac_regression_recovers_known_loadings_and_drops_missing_rows():
+    import pandas as pd
+
+    from factorpipe.stats import hac_regression
+
+    rng = np.random.default_rng(2)
+    x = pd.DataFrame(rng.normal(0, 0.04, size=(2000, 2)), columns=["f1", "f2"])
+    y = 0.003 + 1.5 * x["f1"] + rng.normal(0, 0.01, size=2000)
+    y.iloc[5] = np.nan
+    table = hac_regression(y, x)
+    assert table.attrs["n_obs"] == 1999
+    assert table.loc["alpha", "coefficient"] == pytest.approx(0.003, abs=0.001)
+    assert table.loc["f1", "coefficient"] == pytest.approx(1.5, abs=0.02)
+    assert abs(table.loc["f2", "t_stat"]) < 3
+    assert table.loc["alpha", "t_stat"] > 5
+
+
+def test_hac_regression_without_regressors_is_the_mean_test():
+    import pandas as pd
+
+    from factorpipe.stats import hac_regression
+
+    x = ar1(200, 0.5, seed=3)
+    table = hac_regression(x, pd.DataFrame(index=range(200)), lags=3)
+    mean = newey_west_mean(x, lags=3)
+    assert table.loc["alpha", "coefficient"] == pytest.approx(mean.mean)
+    assert table.loc["alpha", "std_error"] == pytest.approx(mean.std_error)
