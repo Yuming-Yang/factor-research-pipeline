@@ -156,3 +156,35 @@ The order is specific to this panel: the true model is linear, the factors are i
 | Probability of backtest overfitting | 0.615 | 0.000 |
 
 On pure noise the winner passes an unadjusted test at 5% and its bootstrap interval excludes zero. Neither accounts for the search. Its Sharpe ratio is almost exactly what the best of 40 skill-free strategies is expected to show, the deflated ratio is a coin flip, and the in-sample winner lands in the bottom half out of sample more often than not.
+
+## Milestone 6, part 1: structural risk model
+
+This replaces decision 35 as the default. The old model is kept as `risk_model="alpha_factors"` for comparison.
+
+**50. Risk factors are market or industries, beta and styles.** Exposures at the decision date: one dummy per industry when the panel has industry labels (otherwise one column of ones), standardized trailing beta, and each factor standardized. Factor returns come from a cross-sectional regression of next month's returns on these exposures, month by month; the residuals are specific returns. The model at a date is the covariance of factor returns realized so far plus each asset's specific variance.
+
+**51. Industry dummies carry the market.** They add up to one for every asset, so no separate intercept is needed, and beta is standardized so that it measures a tilt around the average asset. Dollar neutrality cancels the market column exactly. It does not cancel a beta tilt, which is why beta is its own factor.
+
+**52. Correlations are shrunk, not covariances.** Factor volatilities differ by two orders of magnitude between an industry and a style. Ledoit-Wolf shrinkage toward a multiple of the identity pulls every variance toward the average: in a test the smallest factor's variance is inflated more than twentyfold. Each factor is divided by its own volatility first, so variances are kept and only correlations move toward zero. The first version of this model used the plain estimator and overstated the risk of a beta-tilted book by about 60%.
+
+**53. Specific variance** is the trailing variance of an asset's regression residuals. Assets with under 12 months get the cross-sectional median, and no asset goes below a quarter of the median.
+
+**54. The regression is unweighted.** Commercial models weight by the square root of market capitalization, because small stocks have noisier returns. The synthetic panel has no size, so this is left for the real-data run.
+
+**55. Industry is one label per asset for the whole sample.** Real companies change industry. This is an approximation to revisit with real data.
+
+### How well the model predicts risk
+
+Bias statistic: the standard deviation across months of realized return over predicted volatility, for a fixed kind of portfolio. A calibrated model gives 1. Above 1 means risk was understated. Panels of 300 assets and 180 months with beta dispersion 0.4 and 8 industries, three seeds.
+
+| Portfolio | Structural | Styles only |
+| --- | --- | --- |
+| Random long-short | 0.84 to 0.97 | 0.76 to 0.92 |
+| Long high beta, short low beta | 0.74 to 0.86 | 1.36 to 1.83 |
+| Long one industry, short the rest | 0.77 to 0.86 | 1.42 to 1.57 |
+
+The styles-only model understates the risk of beta and industry tilts by 40% to 80%. The structural model overstates it by 15% to 35%. A likely cause is that factor returns estimated by regression contain estimation noise, which adds to their measured variance while the same noise is also counted as specific risk. That explanation was not tested. The model errs on the cautious side, and the gap is recorded here instead of being tuned away.
+
+### What changes in the portfolio
+
+At the default risk aversion, on the same three panels: mean absolute net beta of the targets is 0.047, 0.048 and 0.036 with the structural model against 0.049, 0.085 and 0.087 with styles only; the largest net industry position is 0.045 to 0.071 against 0.081 to 0.113. Sharpe ratios are within 0.12 of each other in every case. So the model forecasts risk much better and moves the book moderately: in one of the three panels the beta exposure does not change. Neither constraint is hard. If a book has to be beta or industry neutral, that needs a constraint in the optimizer, which `robust-mvo` does not have.

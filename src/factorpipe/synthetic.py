@@ -52,6 +52,11 @@ class SyntheticConfig:
     market_mean: float = 0.006
     market_vol: float = 0.045
     idio_vol: float = 0.10
+    # Risk structure beyond one common market move. Both are off by default, so that the
+    # planted IC is exactly the cross-sectional correlation (see the module docstring).
+    beta_dispersion: float = 0.0
+    n_industries: int = 0
+    industry_vol: float = 0.03
     # Listing and delisting.
     late_listing_share: float = 0.2
     delist_prob: float = 0.004
@@ -145,6 +150,9 @@ class SyntheticPanel:
     fundamentals: pd.DataFrame
     #: Delisting return per delisted asset, already compounded into its last monthly return.
     delisting_returns: pd.Series = field(repr=False)
+    #: The common market return of each month, and each asset's true loading on it.
+    market_returns: pd.Series = field(repr=False, default=None)
+    betas: pd.Series = field(repr=False, default=None)
 
 
 def make_panel(config: SyntheticConfig | None = None) -> SyntheticPanel:
@@ -173,7 +181,16 @@ def make_panel(config: SyntheticConfig | None = None) -> SyntheticPanel:
     standardized = np.empty((n_dates, n_assets))
     standardized[0] = eps[0]
     standardized[1:] = np.einsum("k,tkn->tn", ic, z[:-1]) + residual_scale * eps[1:]
-    returns = cfg.market_mean + market[:, None] + cfg.idio_vol * standardized
+    # Optional risk structure, drawn from its own stream so that switching it on does not
+    # change any other number in the panel.
+    extra = np.random.default_rng([cfg.seed, 1])
+    beta = 1.0 + cfg.beta_dispersion * extra.standard_normal(n_assets)
+    group = extra.integers(0, max(cfg.n_industries, 1), size=n_assets)
+    industry_shock = cfg.industry_vol * extra.standard_normal((n_dates, max(cfg.n_industries, 1)))
+    if cfg.n_industries == 0:
+        industry_shock[:] = 0.0
+    common = market[:, None] * beta[None, :] + industry_shock[:, group]
+    returns = cfg.market_mean + common + cfg.idio_vol * standardized
     returns = np.maximum(returns, -0.99)
 
     # Listing spells. Most assets list at the start; the rest list later.
@@ -210,11 +227,16 @@ def make_panel(config: SyntheticConfig | None = None) -> SyntheticPanel:
         ic=dict(zip(names, ic.tolist(), strict=True)),
         persistence=dict(zip(names, rho.tolist(), strict=True)),
     )
+    industry = None
+    if cfg.n_industries > 0:
+        industry = pd.Series([f"I{g:02d}" for g in group], index=assets, name="industry")
     return SyntheticPanel(
-        panel=Panel(returns_frame, characteristics),
+        panel=Panel(returns_frame, characteristics, industry),
         truth=truth,
         fundamentals=fundamentals,
         delisting_returns=pd.Series(delist_return[idx], index=assets[idx], name="delisting_return"),
+        market_returns=pd.Series(cfg.market_mean + market, index=dates, name="market"),
+        betas=pd.Series(beta, index=assets, name="beta"),
     )
 
 

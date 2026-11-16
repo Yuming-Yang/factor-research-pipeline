@@ -28,9 +28,11 @@ from factorpipe.combine import Combination, factor_returns, standardize
 from factorpipe.evaluation import MIN_ASSETS, information_coefficient
 from factorpipe.ledger import TrialLedger, fingerprint
 from factorpipe.panel import Panel
+from factorpipe.risk import build_risk_history
 from factorpipe.sharpe import sharpe_ratio
 
 PORTFOLIOS = ("quantile", "mvo")
+RISK_MODELS = ("structural", "alpha_factors")
 
 DEFAULTS: dict[str, dict[str, Any]] = {
     "quantile": {"n_quantiles": 5, "gross": 2.0},
@@ -42,6 +44,7 @@ DEFAULTS: dict[str, dict[str, Any]] = {
         "ic_window": 36,
         "vol_window": 36,
         "risk_window": 60,
+        "risk_model": "structural",
     },
 }
 
@@ -114,10 +117,14 @@ class QuantilePortfolio:
 class MvoPortfolio:
     """Mean-variance positions from ``robust-mvo``, rebuilt at every decision date.
 
-    Risk model at ``t``: exposures are the standardized factors at ``t``; the factor
-    covariance is the Ledoit-Wolf estimate on factor returns realized by ``t``; the
-    idiosyncratic variance is each asset's trailing variance minus its factor part,
-    floored at a quarter of the total.
+    ``risk_model`` chooses how risk is measured:
+
+    - ``"structural"`` (default): market, beta, industries and the factors as styles,
+      from ``factorpipe.risk``.
+    - ``"alpha_factors"``: the factors alone. Exposures are the standardized factors, the
+      factor covariance is the Ledoit-Wolf estimate on their returns, and idiosyncratic
+      variance is trailing total variance minus the factor part, floored at a quarter of
+      the total. It has no market or industry risk and is kept for comparison.
     """
 
     panel: Panel
@@ -133,12 +140,20 @@ class MvoPortfolio:
     ic_window: int = 36
     vol_window: int = 36
     risk_window: int = 60
+    risk_model: str = "structural"
     #: Degradation level of each solve, by decision date (0 = full problem solved).
     levels: dict[pd.Timestamp, int] = field(default_factory=dict)
     #: Target weights returned at each decision date, before any drift.
     targets: dict[pd.Timestamp, pd.Series] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
+        if self.risk_model not in RISK_MODELS:
+            raise ValueError(f"risk_model must be one of {RISK_MODELS}")
+        self._history = (
+            build_risk_history(self.panel, self.factors)
+            if self.risk_model == "structural"
+            else None
+        )
         self._z = standardize(self.panel, self.factors)
         self._factor_returns = factor_returns(self.panel, self._z, self.factors).to_numpy()
         self._vol = trailing_volatility(self.panel, self.vol_window).to_numpy()
@@ -151,20 +166,15 @@ class MvoPortfolio:
         i = snapshot.bar
         use = ~np.isnan(self._scores[i]) & ~np.isnan(self._vol[i])
         ic = self._ic[i]
-        # Factor returns formed before t are realized by t; the one formed at t is not.
-        history = self._factor_returns[max(0, i - self.risk_window) : i]
-        history = history[~np.isnan(history).any(axis=1)]
-        if use.sum() < MIN_ASSETS or np.isnan(ic) or len(history) < MIN_RISK_HISTORY:
+        if use.sum() < MIN_ASSETS or np.isnan(ic):
             return None
-
-        exposures = self._z[i][:, use].T
-        factor_cov, _ = ledoit_wolf(history)
         vol = self._vol[i][use]
-        systematic = np.einsum("nk,kl,nl->n", exposures, factor_cov, exposures)
-        idio_var = np.maximum(vol**2 - systematic, IDIO_FLOOR * vol**2)
+        risk = self._risk_at(i, use, vol)
+        if risk is None:
+            return None
         inputs = Inputs(
             alpha=grinold_alpha(self._scores[i][use], max(ic, 0.0), vol),
-            risk=FactorRiskModel(exposures, factor_cov, idio_var),
+            risk=risk,
             w0=snapshot.weights.to_numpy()[use],
             gamma=self.gamma,
             turnover_penalty=self.turnover_penalty,
@@ -177,6 +187,20 @@ class MvoPortfolio:
         self.levels[t] = report.level
         self.targets[t] = pd.Series(weights, index=self.panel.assets[use])
         return self.targets[t]
+
+    def _risk_at(self, i: int, use: np.ndarray, vol: np.ndarray) -> FactorRiskModel | None:
+        if self._history is not None:
+            return self._history.model_at(i, use, self.risk_window, self.vol_window)
+        # Factor returns formed before t are realized by t; the one formed at t is not.
+        history = self._factor_returns[max(0, i - self.risk_window) : i]
+        history = history[~np.isnan(history).any(axis=1)]
+        if len(history) < MIN_RISK_HISTORY:
+            return None
+        exposures = self._z[i][:, use].T
+        factor_cov, _ = ledoit_wolf(history)
+        systematic = np.einsum("nk,kl,nl->n", exposures, factor_cov, exposures)
+        idio_var = np.maximum(vol**2 - systematic, IDIO_FLOOR * vol**2)
+        return FactorRiskModel(exposures, factor_cov, idio_var)
 
 
 @dataclass(frozen=True)
@@ -212,6 +236,8 @@ def backtest_strategy(
     if unknown:
         raise ValueError(f"unknown parameters for {portfolio!r}: {sorted(unknown)}")
     settings = {**DEFAULTS[portfolio], **params}
+    if settings.get("risk_model", "structural") not in RISK_MODELS:
+        raise ValueError(f"risk_model must be one of {RISK_MODELS}")
     recorded = {
         "combination": combination.trial_id,
         "cost_rate": cost_rate,

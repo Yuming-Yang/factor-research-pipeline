@@ -34,8 +34,12 @@ class Panel:
 
     returns: pd.DataFrame
     characteristics: Mapping[str, pd.DataFrame] = field(default_factory=dict)
+    #: Industry label per asset, if known. Used by the risk model only.
+    industry: pd.Series | None = None
 
     def __post_init__(self) -> None:
+        if self.industry is not None and not self.returns.columns.isin(self.industry.index).all():
+            raise PanelError("industry must have a label for every asset")
         _check_grid(self.returns)
         values = self.returns.to_numpy(dtype=float)
         if np.isinf(values).any():
@@ -78,7 +82,7 @@ class Panel:
 
     def with_characteristic(self, name: str, values: pd.DataFrame) -> Panel:
         """A new panel with one characteristic added or replaced."""
-        return Panel(self.returns, {**self.characteristics, name: values})
+        return Panel(self.returns, {**self.characteristics, name: values}, self.industry)
 
     def forward_returns(self, horizon: int = 1) -> pd.DataFrame:
         """Compounded return over months ``t+1 .. t+horizon`` of a position opened at ``t``.
