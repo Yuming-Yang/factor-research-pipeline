@@ -31,6 +31,8 @@ filterwarnings = ["error"]
 
 [dependency-groups]
 dev = [
+    "alphalens-reloaded>=0.5.1",
     "pytest>=9.2.0",
     "ruff>=0.17.5",
+    "statsmodels>=0.15.0",
 ]
