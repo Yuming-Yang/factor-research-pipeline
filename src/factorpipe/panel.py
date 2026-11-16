@@ -76,6 +76,10 @@ class Panel:
         listed = self.listed
         return listed & listed.shift(-1, fill_value=False)
 
+    def with_characteristic(self, name: str, values: pd.DataFrame) -> Panel:
+        """A new panel with one characteristic added or replaced."""
+        return Panel(self.returns, {**self.characteristics, name: values})
+
     def forward_returns(self, horizon: int = 1) -> pd.DataFrame:
         """Compounded return over months ``t+1 .. t+horizon`` of a position opened at ``t``.
 

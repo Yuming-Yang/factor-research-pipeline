@@ -120,6 +120,15 @@ class Truth:
         return float(6.0 / np.pi * np.arcsin(self.ic_at(name, horizon) / 2.0))
 
     @property
+    def best_ic(self) -> float:
+        """IC of the best possible score, the true expected return: ``sqrt(sum_k ic_k**2)``."""
+        return float(np.sqrt(sum(ic**2 for ic in self.ic.values())))
+
+    def equal_weight_ic(self, names: list[str]) -> float:
+        """IC of the plain average of the named factors: ``sum(ic) / sqrt(len(names))``."""
+        return sum(self.ic[n] for n in names) / float(np.sqrt(len(names)))
+
+    @property
     def planted(self) -> list[str]:
         return [name for name, ic in self.ic.items() if ic != 0.0]
 
