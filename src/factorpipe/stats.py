@@ -10,6 +10,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+import pandas as pd
 
 
 def default_lags(n_obs: int, horizon: int = 1) -> int:
@@ -123,3 +124,55 @@ def _adjust(p_values, rule) -> np.ndarray:
     adjusted[order] = adjusted_sorted
     out[present] = adjusted
     return out
+
+
+def hac_regression(y, x: pd.DataFrame, lags: int | None = None) -> pd.DataFrame:
+    """Regress ``y`` on a constant and the columns of ``x``, with Newey-West errors.
+
+    Used to ask how much of a strategy's return is explained by known factor returns:
+    the intercept (``alpha``) is the part that is not. Coefficients are ordinary least
+    squares, ``b = (X'X)^-1 X'y``. Their covariance is the sandwich
+    ``(X'X)^-1 S (X'X)^-1`` with ``S = sum_j w_j * (G_j + G_j')`` over lags ``j``,
+    ``G_j = sum_t e_t e_{t-j} x_t x_{t-j}'``, Bartlett weights ``w_j = 1 - j/(L+1)`` and
+    ``w_0 = 1/2``. With no regressors this is ``newey_west_mean``.
+
+    Returns one row per coefficient with its standard error, t-statistic and p-value.
+    The R-squared is in ``attrs["r_squared"]`` and the row count in ``attrs["n_obs"]``.
+    """
+    frame = pd.concat([pd.Series(np.asarray(y, dtype=float), index=x.index, name="_y"), x], axis=1)
+    frame = frame.dropna()
+    n = len(frame)
+    design = np.column_stack([np.ones(n), frame[x.columns].to_numpy(dtype=float)])
+    if n <= design.shape[1]:
+        raise ValueError("not enough observations for this many regressors")
+    target = frame["_y"].to_numpy(dtype=float)
+    if lags is None:
+        lags = default_lags(n)
+    lags = min(lags, n - 1)
+
+    bread = np.linalg.inv(design.T @ design)
+    beta = bread @ design.T @ target
+    residual = target - design @ beta
+    scores = design * residual[:, None]
+    meat = scores.T @ scores
+    for j in range(1, lags + 1):
+        weight = 1.0 - j / (lags + 1.0)
+        cross = scores[j:].T @ scores[:-j]
+        meat += weight * (cross + cross.T)
+    covariance = bread @ meat @ bread
+    std_error = np.sqrt(np.diag(covariance))
+    t_stat = beta / std_error
+    table = pd.DataFrame(
+        {
+            "coefficient": beta,
+            "std_error": std_error,
+            "t_stat": t_stat,
+            "p_value": [two_sided_p(t) for t in t_stat],
+        },
+        index=["alpha", *x.columns],
+    )
+    total = float(((target - target.mean()) ** 2).sum())
+    table.attrs["r_squared"] = 1.0 - float(residual @ residual) / total if total > 0 else math.nan
+    table.attrs["n_obs"] = n
+    table.attrs["lags"] = lags
+    return table

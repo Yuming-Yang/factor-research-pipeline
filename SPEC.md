@@ -104,7 +104,7 @@ A small set from the published literature. Each definition will cite its paper.
 - [x] IC and quantile returns agree with `alphalens-reloaded` on a shared test panel, within a stated tolerance.
 - [x] A test shows that replacing every input after a date changes no fitted weight and no score on or before that date, for every combination method.
 - [x] The backtest engine passes all eight `backtest-bias-suite` traps in CI.
-- [ ] The deflated Sharpe ratio uses the trial count read from the ledger, and a test fails if a configuration is evaluated without being logged.
+- [x] The deflated Sharpe ratio uses the trial count read from the ledger, and a test fails if a configuration is evaluated without being logged.
 - [ ] The full pipeline runs on the synthetic panel from a clean clone with one command, without WRDS access.
 - [ ] Every real-data number in the README is produced by one documented command for a reader with WRDS access, and is labelled as such.
 - [ ] The holdout period is evaluated once, and the README reports it.
@@ -117,7 +117,7 @@ A small set from the published literature. Each definition will cite its paper.
 2. **Factor evaluation.** IC, decay, quantiles, turnover, Newey–West, multiple-testing adjustment, cross-check against `alphalens-reloaded`. Done.
 3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger. Done.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter. Done.
-5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution.
+5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution. Done. The regression is in place; loading the Fama–French factors moves to milestone 6 with the other real data.
 6. **WRDS loader, real-data run, holdout, README.** The loader is written here, where a live account can check its table and column names.
 
 Each milestone is one branch and one PR.
