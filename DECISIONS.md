@@ -191,7 +191,7 @@ At the default risk aversion, on the same three panels: mean absolute net beta o
 
 ## Milestone 6, part 2: real-data loaders
 
-None of this has been run against WRDS or the Ken French site. The queries follow the published documentation; everything downstream is tested on hand-made tables in the same shape.
+When this part was written, none of it had been run against WRDS or the Ken French site: the queries followed the published documentation, and everything downstream was tested on hand-made tables in the same shape. Parts 3 and 4 record the first real runs.
 
 **56. The `wrds` package is not a dependency.** Version 3.5.0 requires pandas below 2.3 and this project runs on pandas 3. `scripts/wrds_download.py` runs in its own environment (`uv run --no-project --with wrds`), imports only the query module, and writes three CSV files to `data/wrds`, which is git-ignored. CSV is used because it does not depend on the pandas version on either side. The script has a `--smoke` mode that fetches five years and prints the tables' shapes and columns, to be run first.
 
@@ -215,7 +215,7 @@ None of this has been run against WRDS or the Ken French site. The queries follo
 
 ## Milestone 6, part 3: first contact with real data
 
-**66. The queries ran as written.** On 2026-11-16 the smoke run and the full download returned the expected columns for all three tables, with no change to the SQL or the CIZ flag values. The download covers January 1960 to December 2025. The Ken French loader has still not been run.
+**66. The queries ran as written.** On 2026-11-16 the smoke run and the full download returned the expected columns for all three tables, with no change to the SQL or the CIZ flag values. The download covers January 1960 to December 2025. The Ken French loader had not been run at this point; it was run later the same day for the in-sample regression (decision 72).
 
 **67. The holdout is January 2021 to December 2025, fixed before any real-data result was looked at.** It is the last five years of the download. `load_raw(folder, end="2020-12-31")` drops later CRSP months and Compustat fiscal years when the files are read, and the check script uses that end date by default. A test builds one panel from truncated tables and one from full tables and checks that they agree month for month up to the cutoff. The only thing known about the holdout so far is that its dates exist in the file.
 
@@ -227,7 +227,7 @@ None of this has been run against WRDS or the Ken French site. The queries follo
 
 Calculated based on data from CRSP US Stock Database, © Center for Research in Security Prices (CRSP), The University of Chicago Booth School of Business, and from Compustat, © S&P Global Market Intelligence. No security-level data is published here.
 
-**70. Aggregate results from WRDS data may be published.** Confirmed by the author on 2026-11-16 (SPEC decision D6). This replaces decision 69.
+**70. Aggregate results from WRDS data are published; raw and security-level data are not.** Decided on 2026-11-16 (SPEC decision D6). This replaces decision 69.
 
 **71. Rank IC and mean returns disagree for factors tied to volatility.** In sample, within the universe:
 
