@@ -36,6 +36,11 @@ class Panel:
     characteristics: Mapping[str, pd.DataFrame] = field(default_factory=dict)
     #: Industry label per asset, if known. Used by the risk model only.
     industry: pd.Series | None = None
+    #: True where an asset belongs to the research universe at the end of the month, for
+    #: example after a size filter. ``None`` means every listed asset. An asset outside
+    #: the universe keeps its returns, so a position held when it drops out still earns
+    #: them until it is sold, but it is not investable and gets no forward return.
+    universe: pd.DataFrame | None = None
 
     def __post_init__(self) -> None:
         if self.industry is not None and not self.returns.columns.isin(self.industry.index).all():
@@ -47,6 +52,11 @@ class Panel:
         if (values[~np.isnan(values)] < -1.0).any():
             raise PanelError("a simple return cannot be below -100%")
         _check_one_spell(self.returns)
+        if self.universe is not None and (
+            not self.universe.index.equals(self.returns.index)
+            or not self.universe.columns.equals(self.returns.columns)
+        ):
+            raise PanelError("universe is not on the same grid as returns")
         for name, frame in self.characteristics.items():
             if not frame.index.equals(self.returns.index) or not frame.columns.equals(
                 self.returns.columns
@@ -78,11 +88,16 @@ class Panel:
         because there is no later month to confirm it.
         """
         listed = self.listed
-        return listed & listed.shift(-1, fill_value=False)
+        investable = listed & listed.shift(-1, fill_value=False)
+        if self.universe is not None:
+            investable = investable & self.universe.astype(bool)
+        return investable
 
     def with_characteristic(self, name: str, values: pd.DataFrame) -> Panel:
         """A new panel with one characteristic added or replaced."""
-        return Panel(self.returns, {**self.characteristics, name: values}, self.industry)
+        return Panel(
+            self.returns, {**self.characteristics, name: values}, self.industry, self.universe
+        )
 
     def forward_returns(self, horizon: int = 1) -> pd.DataFrame:
         """Compounded return over months ``t+1 .. t+horizon`` of a position opened at ``t``.
