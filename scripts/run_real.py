@@ -53,6 +53,37 @@ FRENCH = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "Mom"]
 # Fixed after the in-sample run and before the holdout run. See DECISIONS.md.
 FROZEN_METHOD: str | None = "trees"
 
+# Printed at the precision the README quotes, so its numbers can be copied from the output
+# rather than rounded a second time by hand. The JSON files keep six decimals.
+FORMATS = {
+    "months": "{:.0f}",
+    "mean_annual": "{:.1%}",
+    "vol_annual": "{:.1%}",
+    "sharpe": "{:.2f}",
+    "sharpe_low": "{:.2f}",
+    "sharpe_high": "{:.2f}",
+    "max_drawdown": "{:.0%}",
+    "composite_rank_ic": "{:.3f}",
+    "turnover": "{:.2f}",
+    "rank_ic": "{:.3f}",
+    "t_stat": "{:.1f}",
+    "p_holm": "{:.3f}",
+    "pearson_ic": "{:.3f}",
+    "pearson_t": "{:.1f}",
+    "spread_pct": "{:.2f}",
+    "spread_t": "{:.1f}",
+    # The alpha is quoted in percent per month, so four decimals of a fraction is two of a
+    # percentage.
+    "coefficient": "{:.4f}",
+    "std_error": "{:.4f}",
+    "p_value": "{:.3f}",
+}
+
+
+def show(table: pd.DataFrame) -> str:
+    formatters = {c: FORMATS[c].format for c in table.columns if c in FORMATS}
+    return table.to_string(formatters=formatters)
+
 
 def load_panel(end: str | None):
     raw = load_raw("data/wrds", end=end)
@@ -98,7 +129,7 @@ def in_sample() -> None:
     screen[["pearson_ic", "pearson_t", "spread_pct", "spread_t"]] = extra
     columns = ["rank_ic", "t_stat", "p_holm", "pearson_ic", "pearson_t", "spread_pct", "spread_t"]
     print("1. Factor screen\n")
-    print(screen[columns].round(4).to_string())
+    print(show(screen[columns]))
 
     runs, turnover, composite = {}, {}, {}
     for method in METHODS:
@@ -123,7 +154,7 @@ def in_sample() -> None:
     table = pd.DataFrame(rows).set_index("method")
     print(f"\n2. Methods, net of {COST_RATE:.1%} per trade, {len(common)} common months")
     print(f"   {common.index[0].date()} to {common.index[-1].date()}\n")
-    print(table.round(3).to_string())
+    print(show(table))
 
     best = str(table["sharpe"].idxmax())
     deflated = deflated_sharpe_from_ledger(common[best], ledger, fingerprint(panel))
@@ -135,8 +166,8 @@ def in_sample() -> None:
     print(f"   deflated Sharpe ratio                   {deflated.dsr:.3f}")
     print(f"   probability of backtest overfitting     {pbo.pbo:.3f}")
     print("\n4. Regression of its returns on Fama-French five factors and momentum\n")
-    print(regression.round(4).to_string())
-    print(f"   R-squared {regression.attrs['r_squared']:.3f}")
+    print(show(regression))
+    print(f"   R-squared {regression.attrs['r_squared']:.2f}")
 
     RESULTS.mkdir(exist_ok=True)
     payload = {
@@ -174,9 +205,9 @@ def holdout() -> None:
     regression = attribution(window)
     print(f"holdout: {FROZEN_METHOD}, {window.index[0].date()} to {window.index[-1].date()}\n")
     for key, value in stats.items():
-        print(f"   {key:<18} {value:.3f}")
+        print(f"   {key:<18} {FORMATS[key].format(value)}")
     print("\nRegression on Fama-French five factors and momentum\n")
-    print(regression.round(4).to_string())
+    print(show(regression))
     payload = {
         "method": FROZEN_METHOD,
         "window": [str(window.index[0].date()), str(window.index[-1].date())],
