@@ -71,9 +71,9 @@ A small monthly engine with an adapter for `backtest-bias-suite`. The engine mus
 
 The last years of the real-data sample are set aside when the project starts and are not read until every design choice is frozen. They are evaluated once, and that single result is reported whatever it is.
 
-## Factor list (v1, proposed)
+## Factor list (v1)
 
-A small set from the published literature. Each definition will cite its paper.
+A small set from the published literature. Each definition follows the paper in the table; DECISIONS.md lists where it is simplified.
 
 | Factor | Reference |
 | --- | --- |
@@ -115,7 +115,7 @@ A small set from the published literature. Each definition will cite its paper.
 
 1. **Scaffold, data layer, synthetic panel.** Panel interface, generator with planted and noise factors, point-in-time lagging. Done.
 2. **Factor evaluation.** IC, decay, quantiles, turnover, Newey–West, multiple-testing adjustment, cross-check against `alphalens-reloaded`. Done.
-3. **Factor combination.** Walk-forward splitter with purge and embargo, six methods, trial ledger. Done.
+3. **Factor combination.** Walk-forward rules with purge and embargo, six methods, trial ledger. Done.
 4. **Portfolio and backtest.** Alpha scaling, `robust-mvo` call, engine, `backtest-bias-suite` adapter. Done.
 5. **Statistics.** Deflated Sharpe, PBO, bootstrap, factor attribution. Done. The regression is in place; loading the Fama–French factors moves to milestone 6 with the other real data.
 6. **WRDS loader, real-data run, holdout, README.** Done: structural risk model, loaders and factor definitions (tested on hand-made tables), README with synthetic results. The real-data run and the single holdout evaluation are also done; see DECISIONS.md, decisions 72 to 74.
@@ -124,7 +124,7 @@ Each milestone is one branch and one PR.
 
 ## Dependencies (checked 2026-11-15)
 
-Versions are the latest on PyPI on the check date. None was installed or run for this draft.
+Versions were the latest on PyPI on the check date. `uv.lock` pins the versions the project runs with.
 
 | Package | Version | Role | Licence |
 | --- | --- | --- | --- |

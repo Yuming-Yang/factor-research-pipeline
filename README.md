@@ -15,7 +15,7 @@ Pick the best of 40 strategies and it will look good. This is what the pipeline 
 
 On pure noise the winner passes a test at 5% and its bootstrap interval excludes zero. Neither knows that 40 things were tried. Its Sharpe ratio is almost exactly what the best of 40 skill-free strategies is expected to show.
 
-On U.S. equities, the one configuration chosen in sample had a net Sharpe ratio of 1.50 through 2020 and −0.37 on the five years held back. Both numbers are reported [below](#real-data).
+On U.S. equities, the one configuration chosen in sample had a net Sharpe ratio of 1.50 through 2020 and −0.36 on the five years held back. Both numbers are reported [below](#real-data).
 
 ## Quick start
 
@@ -49,7 +49,7 @@ panel ──> factor evaluation ──> combination ──> portfolio ──> ba
 - **Combination.** Equal weight, ICIR, factor momentum, factor mean-variance, ridge and gradient-boosted trees. All walk-forward: each reads history through an explicit rule for when an IC, a factor return or a regression row becomes known.
 - **Portfolio.** Scores become expected returns by the Grinold rule. Positions come from [`robust-mvo`](https://github.com/Yuming-Yang/robust-mvo) with a structural risk model (market or industries, beta, styles), turnover and cost terms.
 - **Backtest.** A bar-by-bar engine that passes all eight traps of [`backtest-bias-suite`](https://github.com/Yuming-Yang/backtest-bias-suite) in CI.
-- **Trial ledger.** Every combination and every backtest is written to an append-only file before it runs. The deflated Sharpe ratio reads its trial count from that file; it cannot be passed in.
+- **Trial ledger.** Every combination and every backtest is written to an append-only file before it runs, and its result is added when it returns. `deflated_sharpe_from_ledger` reads its trial count from that file: every backtest on the same data that returned a result is counted. The lower-level `deflated_sharpe_ratio` also accepts a trial count by hand, for use without a ledger.
 - **Statistics.** Deflated Sharpe ratio, probability of backtest overfitting, stationary bootstrap intervals, and a regression on factor returns with Newey–West errors.
 
 ## Results
@@ -77,11 +77,13 @@ Combination and portfolio, net of 10 basis points per trade. The best possible c
 | Method | Composite IC | Net Sharpe | 95% interval | Monthly turnover |
 | --- | --- | --- | --- | --- |
 | Equal weight | 0.024 | 0.50 | −0.02 to 1.04 | 0.34 |
-| Factor momentum | 0.037 | 1.43 | 1.02 to 1.85 | 0.60 |
+| Factor momentum | 0.037 | 1.43 | 1.02 to 1.84 | 0.60 |
 | Trees | 0.041 | 1.06 | 0.55 to 1.62 | 1.14 |
-| ICIR | 0.042 | 1.83 | 1.37 to 2.34 | 0.37 |
+| ICIR | 0.042 | 1.83 | 1.37 to 2.33 | 0.37 |
 | Factor MVO | 0.044 | 1.84 | 1.37 to 2.35 | 0.39 |
-| Ridge | 0.046 | 1.93 | 1.52 to 2.38 | 0.57 |
+| Ridge | 0.046 | 1.93 | 1.51 to 2.38 | 0.57 |
+
+Each method starts trading once it has enough history, so these Sharpe ratios cover different windows, from 167 months (factor MVO) to 215 (equal weight and factor momentum); the script prints the count for each. The real-data comparison below uses only the months in which every method traded.
 
 For the best method (ridge): 6 backtests in the ledger, a Sharpe ratio of 0.73 expected from the best of 6 with no skill, a deflated Sharpe ratio of 1.000, and a probability of backtest overfitting of 0.139.
 
@@ -95,9 +97,10 @@ The ranking of methods says the methods work as built. It does not say which to 
 | --- | --- | --- |
 | Unadjusted rejection rate per noise factor | 5.6% | 6.0% |
 | Panels with any Holm rejection | 8.8% | 7.0% |
+| Same, with zero Newey–West lags | 6.0% | 5.0% |
 | Panels with any Benjamini–Yekutieli rejection | 1.8% | 1.5% |
 
-The Holm rate is above nominal. Newey–West standard errors are a little too small in short samples, and Holm depends on very small p-values. The pipeline reports this instead of tuning it away: a Holm-adjusted 5% from this code should be read as closer to 9%.
+The Holm rate is above nominal. The IC series of a noise factor has no autocorrelation, so the Newey–West lags only add estimation noise to its standard error, and Holm acts on the smallest p-values, where that noise matters most; with zero lags the rate is close to 5%. The 240-month rate is about three standard errors above 5%. The 120-month rate, from 200 panels, is only about one standard error above it. The pipeline reports this instead of tuning it away: a Holm-adjusted 5% from this code should be read as closer to 9%.
 
 ### Risk forecasts
 
@@ -137,8 +140,8 @@ The download runs in its own environment because the `wrds` package requires an 
 | | In sample | Holdout |
 | --- | --- | --- |
 | Period | August 1969 to December 2020 | January 2021 to December 2025 |
-| Net Sharpe ratio | 1.50 | −0.37 |
-| 95% bootstrap interval | 1.12 to 1.90 | −1.20 to 0.40 |
+| Net Sharpe ratio | 1.50 | −0.36 |
+| 95% bootstrap interval | 1.12 to 1.89 | −1.20 to 0.40 |
 | Annual return | 20.0% | −5.4% |
 | Annual volatility | 13.3% | 14.8% |
 | Maximum drawdown | −41% | −44% |
@@ -156,11 +159,11 @@ In sample, the deflated Sharpe ratio was 1.000 and the probability of backtest o
 | Method | Net Sharpe | 95% interval | Annual return | Max drawdown | Monthly turnover |
 | --- | --- | --- | --- | --- | --- |
 | Factor momentum | 0.70 | 0.43 to 1.01 | 10.4% | −37% | 1.02 |
-| ICIR | 0.91 | 0.58 to 1.26 | 11.8% | −36% | 1.30 |
-| Equal weight | 1.15 | 0.75 to 1.54 | 16.1% | −42% | 1.32 |
+| ICIR | 0.90 | 0.58 to 1.26 | 11.8% | −36% | 1.30 |
+| Equal weight | 1.15 | 0.74 to 1.54 | 16.1% | −42% | 1.32 |
 | Factor MVO | 1.27 | 0.95 to 1.57 | 15.7% | −27% | 1.19 |
 | Ridge | 1.27 | 0.90 to 1.64 | 18.7% | −38% | 1.67 |
-| Trees | 1.50 | 1.12 to 1.90 | 20.0% | −41% | 1.65 |
+| Trees | 1.50 | 1.12 to 1.89 | 20.0% | −41% | 1.65 |
 
 Only trees were run on the holdout. How the other five did there is not known.
 
@@ -168,7 +171,7 @@ Only trees were run on the holdout. How the other five did there is not known.
 
 | Factor | Rank IC (t) | Top-minus-bottom quintile, % per month (t) |
 | --- | --- | --- |
-| Momentum | 0.032 (5.4) | 0.88 (4.4) |
+| Momentum | 0.031 (5.4) | 0.88 (4.4) |
 | Reversal | 0.030 (7.4) | 0.59 (4.3) |
 | Share issuance | 0.018 (5.2) | 0.48 (4.3) |
 | Gross profitability | 0.015 (3.2) | 0.40 (3.6) |
@@ -187,7 +190,7 @@ Low volatility and low beta have a clearly positive rank IC and no return spread
 [DECISIONS.md](DECISIONS.md) records 74 choices with the alternative that was rejected. The ones that shape the project:
 
 - **A synthetic ground truth first.** Research code is hard to test on real data because nobody knows the right answer. The cost is that every result here describes a world that is simpler than a real market.
-- **Trial counts are read, not declared.** The deflated Sharpe ratio takes its number of trials from the ledger. The cost is that a deflated ratio needs a ledger; the benefit is that failed attempts cannot be left out.
+- **Trial counts are read, not declared.** The pipeline's deflated Sharpe ratio takes its number of trials from the ledger. The cost is that a deflated ratio needs a ledger; the benefit is that a backtest with a disappointing result is counted whether or not anyone remembers running it.
 - **One engine for the trap tests and for the results.** The engine trades bars of raw prices, so the bias suite can test it directly, and monthly returns are turned into a price index for it. A separate returns-based engine would have been shorter and untested.
 - **Measured shortfalls are reported.** The Holm false-positive rate and the risk model's overstatement are in the tables above. Both could have been tuned closer to their targets; each fix would have added a choice made after seeing the result.
 - **Defaults are not tuned.** Risk aversion, windows and caps were set once. Choosing them from backtest results would make each choice a trial.
@@ -201,6 +204,7 @@ Low volatility and low beta have a clearly positive rank IC and no return spread
 - **The synthetic world is kind.** A linear truth, independent factors, a constant signal, one volatility for every asset, and delistings unrelated to the signal. Ridge wins because the world is linear; trees have nothing extra to find.
 - **Trials are counted as independent.** Variations of one idea are correlated, so the count overstates the effective number and the deflated ratio is conservative.
 - **A combination that is scored but never backtested does not count** toward the deflated Sharpe ratio. Comparing many combinations by IC and backtesting only the best understates the search.
+- **Only backtests that return a result are counted.** One that fails part way through leaves a trial line and no result, and is not counted. A trial is identified by its method, settings and data, not by the code version, so rerunning after a code change replaces the earlier result instead of adding a trial.
 - **The risk model is simple.** No size factor, unweighted regressions, one industry label per asset for the whole sample. It overstates the risk of factor tilts and does not make a book beta or industry neutral; that would take an optimizer constraint.
 - **Costs are linear.** No market impact, one borrow rate for every asset.
 - **Monthly bars.** No daily data, so no intramonth timing and no volatility measured from daily returns.
