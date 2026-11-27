@@ -52,7 +52,7 @@ The first version of the acceptance criterion required the share of noise factor
 
 Reproduce with `uv run python scripts/false_positive_rates.py` (about 40 seconds).
 
-The IC series of a noise factor has no autocorrelation by construction, so the lags only add estimation noise, and a Newey-West standard error is known to be too small on average in short samples. Holm depends on very small p-values, where that matters most.
+The IC series of a noise factor has no autocorrelation by construction, so the lags only add estimation noise to the standard error. Holm depends on very small p-values, where that noise matters most, and with zero lags the Holm rate falls to 6.0% and 5.0%. A small-sample bias in the standard errors would make the shorter panels worse; here the longer ones show the higher rate. The 120-month rate of 7.0% is about one standard error (roughly 1.8 points with 200 panels) above 5%, so only the 240-month rate is clearly above nominal.
 
 **17. The normal reference is kept and the measured rates are reported.** The criterion was reworded to require the measurement, not a pass. Rejected for now: a Student-t or fixed-b reference distribution, and a data-driven lag count. Either would move the Holm rate toward 5%, at the cost of one more design choice to defend; the size of the gap is small next to what the adjustment removes (25 unadjusted tests at 5.6% each flag at least one noise factor in roughly three panels out of four). Anyone reading a Holm-adjusted result from this pipeline should treat its 5% as closer to 9%.
 
@@ -236,7 +236,7 @@ Calculated based on data from CRSP US Stock Database, © Center for Research in 
 | Size (small) | −0.010 (−2.1) | +0.005 (1.2) | +0.22 (1.8) |
 | Volatility (low) | +0.028 (3.4) | +0.017 (2.1) | +0.05 (0.2) |
 | Beta (low) | +0.018 (2.3) | +0.010 (1.2) | −0.04 (−0.2) |
-| Momentum | +0.032 (5.4) | +0.029 (5.2) | +0.88 (4.4) |
+| Momentum | +0.031 (5.4) | +0.028 (5.2) | +0.88 (4.4) |
 
 Across all stocks, without the size cut, the gap is wider: the rank IC of size is −0.053 (t −10.0) while small stocks earn 0.71% a month more than large ones (t 3.1). A rank correlation compares typical outcomes, and the typical return of a volatile stock is well below its average return, because a few large gains carry the average. So rank IC rewards any characteristic that sorts stocks by low volatility, whether or not it earns anything. Low volatility and low beta pass the rank-IC screen here with no return spread at all.
 
@@ -247,11 +247,11 @@ This was found by a diagnostic after the first screen, on in-sample data only. T
 | Method | Net Sharpe | 95% interval | Annual return | Annual volatility | Max drawdown | Monthly turnover |
 | --- | --- | --- | --- | --- | --- | --- |
 | Factor momentum | 0.70 | 0.43 to 1.01 | 10.4% | 14.8% | −37% | 1.02 |
-| ICIR | 0.91 | 0.58 to 1.26 | 11.8% | 13.0% | −36% | 1.30 |
-| Equal weight | 1.15 | 0.75 to 1.54 | 16.1% | 14.0% | −42% | 1.32 |
+| ICIR | 0.90 | 0.58 to 1.26 | 11.8% | 13.0% | −36% | 1.30 |
+| Equal weight | 1.15 | 0.74 to 1.54 | 16.1% | 14.0% | −42% | 1.32 |
 | Factor MVO | 1.27 | 0.95 to 1.57 | 15.7% | 12.4% | −27% | 1.19 |
 | Ridge | 1.27 | 0.90 to 1.64 | 18.7% | 14.7% | −38% | 1.67 |
-| Trees | 1.50 | 1.12 to 1.90 | 20.0% | 13.3% | −41% | 1.65 |
+| Trees | 1.50 | 1.12 to 1.89 | 20.0% | 13.3% | −41% | 1.65 |
 
 Six backtests are in the ledger for this data. For trees, the deflated Sharpe ratio is 1.000 against a hurdle of 0.38, the probability of backtest overfitting over the six methods is 0.071, and the regression on the Fama-French five factors and momentum leaves an alpha of 1.45% a month (t 7.1) with an R-squared of 0.08. Every solve finished at degradation level 0.
 
@@ -273,8 +273,8 @@ Six backtests are in the ledger for this data. For trees, the deflated Sharpe ra
 | | In sample | Holdout |
 | --- | --- | --- |
 | Period | 1969-08 to 2020-12 | 2021-01 to 2025-12 |
-| Net Sharpe ratio | 1.50 | −0.37 |
-| 95% bootstrap interval | 1.12 to 1.90 | −1.20 to 0.40 |
+| Net Sharpe ratio | 1.50 | −0.36 |
+| 95% bootstrap interval | 1.12 to 1.89 | −1.20 to 0.40 |
 | Annual return | 20.0% | −5.4% |
 | Annual volatility | 13.3% | 14.8% |
 | Maximum drawdown | −41% | −44% |
